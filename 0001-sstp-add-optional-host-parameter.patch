@@ -1,0 +1,244 @@
+From 2039312ad3479ab2d9298be5aa88f4afa66877f6 Mon Sep 17 00:00:00 2001
+From: Alexander Burlakov <alkboor@mail.ru>
+Date: Sun, 1 Nov 2026 18:18:19 +0000
+Subject: [PATCH] sstp: add optional host parameter
+
+Add an optional Host field to the SSTP connection editor.
+
+The value is passed to sstpc using the --host option. This
+allows specifying the virtual hostname separately from the
+gateway address, which is useful when connecting to an IP
+address with HTTP, proxy or TLS extension requirements.
+
+Validate the hostname in both the connection editor and
+the VPN service.
+
+Existing connections without the host property retain
+their previous behavior.
+---
+ properties/nm-sstp-dialog.ui | 25 ++++++++++++++++
+ properties/nm-sstp-editor.c  | 58 ++++++++++++++++++++++++++++++++++++
+ shared/nm-service-defines.h  |  1 +
+ src/nm-sstp-service.c        | 45 +++++++++++++++++++++++++++-
+ 4 files changed, 128 insertions(+), 1 deletion(-)
+
+diff --git a/properties/nm-sstp-dialog.ui b/properties/nm-sstp-dialog.ui
+index 399e644..69d41bd 100644
+--- a/properties/nm-sstp-dialog.ui
++++ b/properties/nm-sstp-dialog.ui
+@@ -100,6 +100,31 @@ config: the first parameter of sstp</property>
+                 <property name="top-attach">0</property>
+               </packing>
+             </child>
++            <child>
++              <object class="GtkEntry" id="host_entry">
++                <property name="visible">True</property>
++                <property name="can-focus">True</property>
++                <property name="tooltip-text" translatable="yes">Optional SSTP virtual host name passed separately from the gateway address (sstpc --host).</property>
++                <property name="hexpand">True</property>
++              </object>
++              <packing>
++                <property name="left-attach">1</property>
++                <property name="top-attach">1</property>
++              </packing>
++            </child>
++            <child>
++              <object class="GtkLabel" id="label_host">
++                <property name="visible">True</property>
++                <property name="can-focus">False</property>
++                <property name="label" translatable="yes">_Host:</property>
++                <property name="use-underline">True</property>
++                <property name="mnemonic-widget">host_entry</property>
++              </object>
++              <packing>
++                <property name="left-attach">0</property>
++                <property name="top-attach">1</property>
++              </packing>
++            </child>
+             <child>
+               <placeholder/>
+             </child>
+diff --git a/properties/nm-sstp-editor.c b/properties/nm-sstp-editor.c
+index 70a162f..e435bb6 100644
+--- a/properties/nm-sstp-editor.c
++++ b/properties/nm-sstp-editor.c
+@@ -132,6 +132,47 @@ validate (SstpPluginUiWidget *self, GError **error)
+         return FALSE;
+     }
+ 
++    widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "host_entry"));
++    if (widget) {
++        str = gtk_editable_get_text (GTK_EDITABLE (widget));
++        if (str && strlen (str)) {
++            const char *p;
++            size_t len = strlen (str);
++            char **labels;
++            int i, nlabels;
++            gboolean invalid = FALSE;
++
++            if (len > 253 || str[len - 1] == '.')
++                invalid = TRUE;
++            for (p = str; *p && !invalid; p++) {
++                if (!(g_ascii_isalnum (*p) || *p == '.' || *p == '-'))
++                    invalid = TRUE;
++            }
++            if (!invalid) {
++                labels = g_strsplit (str, ".", -1);
++                nlabels = g_strv_length (labels);
++                for (i = 0; i < nlabels; i++) {
++                    size_t llen = strlen (labels[i]);
++                    if (llen == 0 || llen > 63 ||
++                        labels[i][0] == '-' || labels[i][llen - 1] == '-') {
++                        invalid = TRUE;
++                        break;
++                    }
++                }
++                g_strfreev (labels);
++            }
++            if (invalid) {
++                gtk_style_context_add_class (gtk_widget_get_style_context (widget), "error");
++                g_set_error (error,
++                             NMV_EDITOR_PLUGIN_ERROR,
++                             NMV_EDITOR_PLUGIN_ERROR_INVALID_PROPERTY,
++                             _("Invalid hostname."));
++                return FALSE;
++            }
++        }
++        gtk_style_context_remove_class (gtk_widget_get_style_context (widget), "error");
++    }
++
+     widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "auth_combo"));
+     g_return_val_if_fail (widget, FALSE);
+ 
+@@ -568,6 +609,17 @@ init_plugin_ui (SstpPluginUiWidget *self, NMConnection *connection, GError **err
+     }
+     g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
+ 
++    /* Host */
++    widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "host_entry"));
++    g_return_val_if_fail (widget != NULL, FALSE);
++    if (s_vpn) {
++        value = nm_setting_vpn_get_data_item (s_vpn, NM_SSTP_KEY_HOST);
++        if (value && strlen (value)) {
++            gtk_editable_set_text (GTK_EDITABLE (widget), value);
++        }
++    }
++    g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
++
+     /* Authentication Combo */
+     widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "auth_combo"));
+     g_return_val_if_fail (widget != NULL, FALSE);
+@@ -690,6 +742,12 @@ update_connection (NMVpnEditor *iface,
+         nm_setting_vpn_add_data_item (s_vpn, NM_SSTP_KEY_GATEWAY, str);
+     }
+ 
++    widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "host_entry"));
++    str = gtk_editable_get_text (GTK_EDITABLE (widget));
++    if (str && strlen (str)) {
++        nm_setting_vpn_add_data_item (s_vpn, NM_SSTP_KEY_HOST, str);
++    }
++
+     auth_type = get_auth_type (priv->builder);
+     if (auth_type) {
+ 
+diff --git a/shared/nm-service-defines.h b/shared/nm-service-defines.h
+index 98e5950..83891e9 100644
+--- a/shared/nm-service-defines.h
++++ b/shared/nm-service-defines.h
+@@ -36,6 +36,7 @@
+ #define NM_DBUS_PATH_SSTP_PPP                   "/org/freedesktop/NetworkManager/sstp/ppp"
+ 
+ #define NM_SSTP_KEY_GATEWAY                     "gateway"
++#define NM_SSTP_KEY_HOST                        "host"
+ #define NM_SSTP_KEY_UUID                        "uuid"
+ #define NM_SSTP_KEY_USER                        "user"
+ #define NM_SSTP_KEY_PASSWORD                    "password"
+diff --git a/src/nm-sstp-service.c b/src/nm-sstp-service.c
+index 8b0beca..0f7e71a 100644
+--- a/src/nm-sstp-service.c
++++ b/src/nm-sstp-service.c
+@@ -109,6 +109,7 @@ typedef struct {
+ 
+ static const ValidProperty valid_properties[] = {
+     { NM_SSTP_KEY_GATEWAY,                   G_TYPE_STRING,  TRUE  },
++    { NM_SSTP_KEY_HOST,                      G_TYPE_STRING,  FALSE },
+     { NM_SSTP_KEY_USER,                      G_TYPE_STRING,  FALSE },
+     { NM_SSTP_KEY_PASSWORD_FLAGS,            G_TYPE_STRING,  FALSE },
+     { NM_SSTP_KEY_DOMAIN,                    G_TYPE_STRING,  FALSE },
+@@ -468,12 +469,14 @@ construct_pppd_args (NMSstpPlugin *plugin,
+     GPtrArray *args = NULL;
+     const char *value, *sstp_binary;
+     const char *proxy_server, *proxy_port;
++    const char *host = NULL;
+     gs_free char *ipparam = NULL;
+     gs_free char *ca_cert = NULL;
+     gs_free char *ca_path = NULL;
+     gs_free char *proxy = NULL;
+     gs_free char *uuid = NULL;
+     gs_free char *pty = NULL;
++    gs_free char *host_quoted = NULL;
+     gboolean ign_cert = FALSE;
+     gboolean tls_ext = FALSE;
+     gboolean is_pkcs12 = FALSE;
+@@ -499,6 +502,44 @@ construct_pppd_args (NMSstpPlugin *plugin,
+         goto error;
+     }
+ 
++    /* Read optional Host option */
++    host = nm_setting_vpn_get_data_item (s_vpn, NM_SSTP_KEY_HOST);
++    if (host && strlen (host)) {
++        const char *p;
++        size_t len = strlen (host);
++        char **labels;
++        int i, nlabels;
++
++        if (len > 253 || host[len - 1] == '.') {
++            g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_INVALID_CONNECTION,
++                         "%s", _("Invalid SSTP host."));
++            goto error;
++        }
++        for (p = host; *p; p++) {
++            if (!(g_ascii_isalnum (*p) || *p == '.' || *p == '-')) {
++                g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_INVALID_CONNECTION,
++                             "%s", _("Invalid SSTP host."));
++                goto error;
++            }
++        }
++        labels = g_strsplit (host, ".", -1);
++        nlabels = g_strv_length (labels);
++        for (i = 0; i < nlabels; i++) {
++            size_t llen = strlen (labels[i]);
++            if (llen == 0 || llen > 63 ||
++                labels[i][0] == '-' || labels[i][llen - 1] == '-') {
++                g_strfreev (labels);
++                g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_INVALID_CONNECTION,
++                             "%s", _("Invalid SSTP host."));
++                goto error;
++            }
++        }
++        g_strfreev (labels);
++        host_quoted = g_shell_quote (host);
++    } else {
++        host = NULL;
++    }
++
+     /* Create the argument vector for pppd */
+     args = g_ptr_array_new ();
+     g_ptr_array_add (args, (gpointer) g_strdup (pppd));
+@@ -554,10 +595,12 @@ construct_pppd_args (NMSstpPlugin *plugin,
+ 
+     /* Add the PTY option */
+     ipparam = g_strdup_printf ("nm-pptp-service-%d", getpid ());    /* Using "pptp" to avoid having /etc/ppp/ip-up.d/0000usepeerdns replace /etc/resolv.conf */
+-    pty = g_strdup_printf ("%s %s %s %s --nolaunchpppd %s %s --ipparam %s %s %s",
++    pty = g_strdup_printf ("%s %s %s %s %s %s --nolaunchpppd %s %s --ipparam %s %s %s",
+                            sstp_binary, gwaddr,
+                            ign_cert == TRUE ? "--cert-warn" : "",
+                            tls_ext == TRUE ? "--tls-ext" : "",
++                           host ? "--host" : "",
++                           host_quoted ? host_quoted : "",
+                            gl.debug ? "--log-level 5" : "",
+                            proxy ? proxy : "",
+                            ipparam,
+-- 
+2.47.3
+
