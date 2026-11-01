@@ -1,0 +1,797 @@
+diff --git a/Makefile.am b/Makefile.am
+index 770fc59..6c34092 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -21,10 +21,10 @@ plugindir = $(libdir)/NetworkManager
+ plugin_LTLIBRARIES =
+ 
+ dbusservicedir = $(datadir)/dbus-1/system.d
+-dbusservice_DATA = nm-sstp-service.conf
++dbusservice_DATA = nm-sstp-service-custom.conf
+ 
+ nmvpnservicedir = $(NM_VPN_SERVICE_DIR)
+-nmvpnservice_DATA = nm-sstp-service.name
++nmvpnservice_DATA = nm-sstp-service-custom.name
+ 
+ BUILT_SOURCES =
+ 
+@@ -90,9 +90,9 @@ EXTRA_DIST += \
+ 
+ ###############################################################################
+ 
+-libexec_PROGRAMS += src/nm-sstp-service
++libexec_PROGRAMS += src/nm-sstp-service-custom
+ 
+-src_nm_sstp_service_SOURCES = \
++src_nm_sstp_service_custom_SOURCES = \
+ 	$(shared_sources) \
+ 	shared/utils.c \
+ 	shared/utils.h \
+@@ -100,9 +100,9 @@ src_nm_sstp_service_SOURCES = \
+ 	src/nm-sstp-pppd-status.h \
+ 	src/nm-sstp-service.h \
+ 	src/nm-sstp-service.c
+-src_nm_sstp_service_CPPFLAGS = \
++src_nm_sstp_service_custom_CPPFLAGS = \
+ 	$(src_cppflags)
+-src_nm_sstp_service_LDADD = \
++src_nm_sstp_service_custom_LDADD = \
+ 	src/libnm-sstp-pppd-service-dbus.la \
+ 	$(LIBNM_LIBS) \
+ 	$(GNUTLS_LIBS)
+@@ -110,23 +110,23 @@ src_nm_sstp_service_LDADD = \
+ ###############################################################################
+ 
+ pppd_plugindir = $(PPPD_PLUGIN_DIR)
+-pppd_plugin_LTLIBRARIES = src/nm-sstp-pppd-plugin.la
++pppd_plugin_LTLIBRARIES = src/nm-sstp-pppd-plugin-custom.la
+ 
+-src_nm_sstp_pppd_plugin_la_SOURCES = \
++src_nm_sstp_pppd_plugin_custom_la_SOURCES = \
+ 	shared/nm-utils/nm-shared-utils.c \
+ 	src/nm-sstp-pppd-plugin.c \
+ 	src/nm-sstp-pppd-mppe.h \
+ 	src/nm-sstp-pppd-compat.h \
+ 	src/nm-sstp-pppd-status.h
+ if !WITH_PPP_MPPE_KEYS
+-src_nm_sstp_pppd_plugin_la_SOURCES += \
++src_nm_sstp_pppd_plugin_custom_la_SOURCES += \
+ 	src/nm-sstp-pppd-mppe.c
+ endif
+-src_nm_sstp_pppd_plugin_la_CPPFLAGS = \
++src_nm_sstp_pppd_plugin_custom_la_CPPFLAGS = \
+ 	$(src_cppflags)
+-src_nm_sstp_pppd_plugin_la_LDFLAGS = \
++src_nm_sstp_pppd_plugin_custom_la_LDFLAGS = \
+ 	-module -avoid-version
+-src_nm_sstp_pppd_plugin_la_LIBADD = \
++src_nm_sstp_pppd_plugin_custom_la_LIBADD = \
+ 	$(GLIB_LIBS) \
+ 	$(LIBNM_LIBS) \
+ 	$(SSTPC_LIBS)
+@@ -180,117 +180,117 @@ CLEANFILES += \
+ EXTRA_DIST += \
+ 	properties/nm-sstp-dialog.ui \
+ 	properties/gresource.xml \
+-	properties/libnm-sstp-properties.ver \
+-	properties/libnm-vpn-plugin-sstp.ver \
+-	properties/libnm-vpn-plugin-sstp-editor.ver
++	properties/libnm-sstp-custom-properties.ver \
++	properties/libnm-vpn-plugin-sstp-custom.ver \
++	properties/libnm-vpn-plugin-sstp-editor-custom.ver
+ 
+ ###############################################################################
+ 
+-plugin_LTLIBRARIES += properties/libnm-vpn-plugin-sstp.la
++plugin_LTLIBRARIES += properties/libnm-vpn-plugin-sstp-custom.la
+ 
+-properties_libnm_vpn_plugin_sstp_la_SOURCES = \
++properties_libnm_vpn_plugin_sstp_custom_la_SOURCES = \
+ 	shared/nm-utils/nm-vpn-plugin-utils.c \
+ 	$(plugin_sources)
+-properties_libnm_vpn_plugin_sstp_la_CFLAGS = \
++properties_libnm_vpn_plugin_sstp_custom_la_CFLAGS = \
+ 	$(GLIB_CFLAGS) \
+ 	$(LIBNM_CFLAGS)
+-properties_libnm_vpn_plugin_sstp_la_CPPFLAGS = \
++properties_libnm_vpn_plugin_sstp_custom_la_CPPFLAGS = \
+ 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB_BASE \
+ 	$(properties_cppflags)
+-properties_libnm_vpn_plugin_sstp_la_LIBADD = \
++properties_libnm_vpn_plugin_sstp_custom_la_LIBADD = \
+ 	$(LIBNM_LIBS)
+-properties_libnm_vpn_plugin_sstp_la_LDFLAGS = \
++properties_libnm_vpn_plugin_sstp_custom_la_LDFLAGS = \
+ 	-avoid-version \
+-	-Wl,--version-script="$(srcdir)/properties/libnm-vpn-plugin-sstp.ver"
++	-Wl,--version-script="$(srcdir)/properties/libnm-vpn-plugin-sstp-custom.ver"
+ 
+ ###############################################################################
+ 
+ if WITH_GNOME
+-plugin_LTLIBRARIES += properties/libnm-vpn-plugin-sstp-editor.la
++plugin_LTLIBRARIES += properties/libnm-vpn-plugin-sstp-editor-custom.la
+ endif
+ 
+-properties_libnm_vpn_plugin_sstp_editor_la_SOURCES = \
++properties_libnm_vpn_plugin_sstp_editor_custom_la_SOURCES = \
+ 	$(editor_sources)
+ 
+-nodist_properties_libnm_vpn_plugin_sstp_editor_la_SOURCES = \
++nodist_properties_libnm_vpn_plugin_sstp_editor_custom_la_SOURCES = \
+ 	properties/resources.c \
+ 	properties/resources.h
+ 
+-properties_libnm_vpn_plugin_sstp_editor_la_CFLAGS = \
++properties_libnm_vpn_plugin_sstp_editor_custom_la_CFLAGS = \
+ 	$(GLIB_CFLAGS) \
+ 	$(GTK_CFLAGS) \
+ 	$(LIBNM_CFLAGS) \
+ 	$(LIBNMA_CFLAGS) \
+ 	$(GNUTLS_CFLAGS)
+ 
+-properties_libnm_vpn_plugin_sstp_editor_la_CPPFLAGS = \
++properties_libnm_vpn_plugin_sstp_editor_custom_la_CPPFLAGS = \
+ 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB_EDITOR \
+ 	$(properties_cppflags)
+ 
+-properties_libnm_vpn_plugin_sstp_editor_la_LIBADD = \
++properties_libnm_vpn_plugin_sstp_editor_custom_la_LIBADD = \
+ 	$(GTK_LIBS) \
+ 	$(LIBNM_LIBS) \
+ 	$(LIBNMA_LIBS) \
+ 	$(GNUTLS_LIBS)
+ 
+-properties_libnm_vpn_plugin_sstp_editor_la_LDFLAGS = \
++properties_libnm_vpn_plugin_sstp_editor_custom_la_LDFLAGS = \
+ 	-avoid-version \
+-	-Wl,--version-script="$(srcdir)/properties/libnm-vpn-plugin-sstp-editor.ver"
++	-Wl,--version-script="$(srcdir)/properties/libnm-vpn-plugin-sstp-editor-custom.ver"
+ 
+ ###############################################################################
+ 
+ if WITH_GTK4
+-plugin_LTLIBRARIES += properties/libnm-gtk4-vpn-plugin-sstp-editor.la
++plugin_LTLIBRARIES += properties/libnm-gtk4-vpn-plugin-sstp-editor-custom.la
+ endif
+ 
+-properties_libnm_gtk4_vpn_plugin_sstp_editor_la_SOURCES = \
++properties_libnm_gtk4_vpn_plugin_sstp_editor_custom_la_SOURCES = \
+ 	$(editor_sources)
+ 
+-nodist_properties_libnm_gtk4_vpn_plugin_sstp_editor_la_SOURCES = \
++nodist_properties_libnm_gtk4_vpn_plugin_sstp_editor_custom_la_SOURCES = \
+ 	gtk4/resources.c \
+ 	properties/resources.h
+ 
+-properties_libnm_gtk4_vpn_plugin_sstp_editor_la_CFLAGS = \
++properties_libnm_gtk4_vpn_plugin_sstp_editor_custom_la_CFLAGS = \
+ 	$(GLIB_CFLAGS) \
+ 	$(GTK4_CFLAGS) \
+ 	$(LIBNM_CFLAGS) \
+ 	$(LIBNMA_GTK4_CFLAGS) \
+ 	$(GNUTLS_CFLAGS)
+ 
+-properties_libnm_gtk4_vpn_plugin_sstp_editor_la_CPPFLAGS = \
+-	$(properties_libnm_vpn_plugin_sstp_editor_la_CPPFLAGS)
++properties_libnm_gtk4_vpn_plugin_sstp_editor_custom_la_CPPFLAGS = \
++	$(properties_libnm_vpn_plugin_sstp_editor_custom_la_CPPFLAGS)
+ 
+-properties_libnm_gtk4_vpn_plugin_sstp_editor_la_LIBADD = \
++properties_libnm_gtk4_vpn_plugin_sstp_editor_custom_la_LIBADD = \
+ 	$(GLIB_LIBS) \
+ 	$(GTK4_LIBS) \
+ 	$(LIBNM_LIBS) \
+ 	$(LIBNMA_GTK4_LIBS) \
+ 	$(GNUTLS_LIBS)
+ 
+-properties_libnm_gtk4_vpn_plugin_sstp_editor_la_LDFLAGS = \
+-	$(properties_libnm_vpn_plugin_sstp_editor_la_LDFLAGS)
++properties_libnm_gtk4_vpn_plugin_sstp_editor_custom_la_LDFLAGS = \
++	$(properties_libnm_vpn_plugin_sstp_editor_custom_la_LDFLAGS)
+ 
+ ###############################################################################
+ 
+ if WITH_GNOME
+-libexec_PROGRAMS += auth-dialog/nm-sstp-auth-dialog
++libexec_PROGRAMS += auth-dialog/nm-sstp-auth-dialog-custom
+ endif
+ 
+-auth_dialog_nm_sstp_auth_dialog_SOURCES = \
++auth_dialog_nm_sstp_auth_dialog_custom_SOURCES = \
+ 	$(shared_sources) \
+ 	auth-dialog/main.c
+ 
+-auth_dialog_nm_sstp_auth_dialog_CFLAGS = \
++auth_dialog_nm_sstp_auth_dialog_custom_CFLAGS = \
+ 	$(GLIB_CFLAGS) \
+ 	$(GTK_CFLAGS) \
+ 	$(LIBNM_CFLAGS) \
+ 	$(LIBNMA_CFLAGS) \
+ 	$(LIBSECRET_CFLAGS)
+ 
+-auth_dialog_nm_sstp_auth_dialog_CPPFLAGS = \
++auth_dialog_nm_sstp_auth_dialog_custom_CPPFLAGS = \
+ 	-I$(top_srcdir)/shared
+ 
+-auth_dialog_nm_sstp_auth_dialog_LDADD = \
++auth_dialog_nm_sstp_auth_dialog_custom_LDADD = \
+ 	$(GTK_LIBS) \
+ 	$(LIBNM_LIBS) \
+ 	$(LIBNMA_LIBS) \
+@@ -300,7 +300,7 @@ auth_dialog_nm_sstp_auth_dialog_LDADD = \
+ ###############################################################################
+ 
+ appdatadir = $(datadir)/metainfo
+-appdata_in_files = appdata/network-manager-sstp.metainfo.xml.in
++appdata_in_files = appdata/network-manager-sstp-custom.metainfo.xml.in
+ appdata_files = $(appdata_in_files:.xml.in=.xml)
+ if WITH_GNOME
+ appdata_DATA = $(appdata_files)
+@@ -308,13 +308,13 @@ $(appdata_DATA): $(appdata_in_files)
+ 	$(AM_V_GEN)$(MSGFMT) --xml --template $< -d $(top_srcdir)/po -o $@
+ endif
+ 
+-nm-sstp-service.name: $(srcdir)/nm-sstp-service.name.in
++nm-sstp-service-custom.name: $(srcdir)/nm-sstp-service-custom.name.in
+ 	$(AM_V_GEN) sed -e 's|[@]LIBEXECDIR[@]|$(libexecdir)|g' \
+ 	    -e 's|[@]PLUGINDIR[@]/|@NM_PLUGIN_DIR_NAME_FILE@|g' \
+ 	    $^ >$@
+ 
+ EXTRA_DIST += \
+-	nm-sstp-service.name.in \
++	nm-sstp-service-custom.name.in \
+ 	$(dbusservice_DATA) \
+ 	$(appdata_in_files) \
+ 	$(appdata_files)
+diff --git a/appdata/network-manager-sstp.metainfo.xml.in b/appdata/network-manager-sstp-custom.metainfo.xml.in
+similarity index 97%
+rename from appdata/network-manager-sstp.metainfo.xml.in
+rename to appdata/network-manager-sstp-custom.metainfo.xml.in
+index 3018b2c..8149e70 100644
+--- a/appdata/network-manager-sstp.metainfo.xml.in
++++ b/appdata/network-manager-sstp-custom.metainfo.xml.in
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <!-- Copyright Lubomir Rintel 2016 -->
+ <component type="addon">
+-  <id>network-manager-sstp</id>
++  <id>network-manager-sstp-custom</id>
+   <project_license>GPL-2.0+</project_license>
+   <metadata_license>CC0-1.0</metadata_license>
+   <extends>nm-connection-editor.desktop</extends>
+diff --git a/configure.ac b/configure.ac
+index a96f5cf..4ad4468 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -1,6 +1,6 @@
+ AC_PREREQ([2.69])
+ 
+-AC_INIT([NetworkManager-sstp],[1.3.2],[eivnaes@yahoo.com],[NetworkManager-sstp])
++AC_INIT([NetworkManager-sstp-custom],[1.3.2],[eivnaes@yahoo.com],[NetworkManager-sstp-custom])
+ AM_INIT_AUTOMAKE([1.9 no-dist-gzip dist-xz -Wno-portability])
+ AM_MAINTAINER_MODE
+ AM_SILENT_RULES([yes])
+@@ -194,7 +194,7 @@ dnl
+ AM_GNU_GETTEXT([external])
+ AM_GNU_GETTEXT_VERSION([0.20])
+ 
+-GETTEXT_PACKAGE=NetworkManager-sstp
++GETTEXT_PACKAGE=NetworkManager-sstp-custom
+ AC_SUBST(GETTEXT_PACKAGE)
+ AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Gettext package])
+ 
+diff --git a/nm-sstp-service-custom.conf b/nm-sstp-service-custom.conf
+new file mode 100644
+index 0000000..5acc630
+--- /dev/null
++++ b/nm-sstp-service-custom.conf
+@@ -0,0 +1,15 @@
++<!DOCTYPE busconfig PUBLIC
++ "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"
++ "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
++<busconfig>
++	<policy user="root">
++		<allow own_prefix="org.freedesktop.NetworkManager.sstp.custom"/>
++		<allow send_destination="org.freedesktop.NetworkManager.sstp.custom"/>
++		<allow send_interface="org.freedesktop.NetworkManager.sstp.custom.ppp"/>
++	</policy>
++	<policy context="default">
++		<deny own_prefix="org.freedesktop.NetworkManager.sstp.custom"/>
++		<deny send_destination="org.freedesktop.NetworkManager.sstp.custom"/>
++	</policy>
++</busconfig>
++
+diff --git a/nm-sstp-service-custom.name.in b/nm-sstp-service-custom.name.in
+new file mode 100644
+index 0000000..3e3ee3f
+--- /dev/null
++++ b/nm-sstp-service-custom.name.in
+@@ -0,0 +1,14 @@
++[VPN Connection]
++name=sstp-custom
++service=org.freedesktop.NetworkManager.sstp.custom
++program=@LIBEXECDIR@/nm-sstp-service-custom
++supports-multiple-connections=true
++
++[libnm]
++plugin=@PLUGINDIR@/libnm-vpn-plugin-sstp-custom.so
++
++[GNOME]
++auth-dialog=@LIBEXECDIR@/nm-sstp-auth-dialog-custom
++properties=@PLUGINDIR@/libnm-sstp-custom-properties
++supports-external-ui-mode=true
++supports-hints=true
+\ No newline at end of file
+diff --git a/nm-sstp-service.conf b/nm-sstp-service.conf
+deleted file mode 100644
+index 80ff8ac..0000000
+--- a/nm-sstp-service.conf
++++ /dev/null
+@@ -1,15 +0,0 @@
+-<!DOCTYPE busconfig PUBLIC
+- "-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN"
+- "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
+-<busconfig>
+-	<policy user="root">
+-		<allow own_prefix="org.freedesktop.NetworkManager.sstp"/>
+-		<allow send_destination="org.freedesktop.NetworkManager.sstp"/>
+-		<allow send_interface="org.freedesktop.NetworkManager.sstp.ppp"/>
+-	</policy>
+-	<policy context="default">
+-		<deny own_prefix="org.freedesktop.NetworkManager.sstp"/>
+-		<deny send_destination="org.freedesktop.NetworkManager.sstp"/>
+-	</policy>
+-</busconfig>
+-
+diff --git a/nm-sstp-service.name.in b/nm-sstp-service.name.in
+deleted file mode 100644
+index ffae64b..0000000
+--- a/nm-sstp-service.name.in
++++ /dev/null
+@@ -1,14 +0,0 @@
+-[VPN Connection]
+-name=sstp
+-service=org.freedesktop.NetworkManager.sstp
+-program=@LIBEXECDIR@/nm-sstp-service
+-supports-multiple-connections=true
+-
+-[libnm]
+-plugin=@PLUGINDIR@/libnm-vpn-plugin-sstp.so
+-
+-[GNOME]
+-auth-dialog=@LIBEXECDIR@/nm-sstp-auth-dialog
+-properties=@PLUGINDIR@/libnm-sstp-properties
+-supports-external-ui-mode=true
+-supports-hints=true
+diff --git a/po/POTFILES.in b/po/POTFILES.in
+index cfd971c..4c97cf5 100644
+--- a/po/POTFILES.in
++++ b/po/POTFILES.in
+@@ -1,6 +1,6 @@
+ # List of source files containing translatable strings.
+ # Please keep this file sorted alphabetically.
+-appdata/network-manager-sstp.metainfo.xml.in
++appdata/network-manager-sstp-custom.metainfo.xml.in
+ auth-dialog/main.c
+ properties/advanced-dialog.c
+ properties/nm-sstp-dialog.ui
+diff --git a/properties/libnm-sstp-properties.ver b/properties/libnm-sstp-custom-properties.ver
+similarity index 100%
+rename from properties/libnm-sstp-properties.ver
+rename to properties/libnm-sstp-custom-properties.ver
+diff --git a/properties/libnm-vpn-plugin-sstp.ver b/properties/libnm-vpn-plugin-sstp-custom.ver
+similarity index 100%
+rename from properties/libnm-vpn-plugin-sstp.ver
+rename to properties/libnm-vpn-plugin-sstp-custom.ver
+diff --git a/properties/libnm-vpn-plugin-sstp-editor-custom.ver b/properties/libnm-vpn-plugin-sstp-editor-custom.ver
+new file mode 100644
+index 0000000..92216ab
+--- /dev/null
++++ b/properties/libnm-vpn-plugin-sstp-editor-custom.ver
+@@ -0,0 +1,6 @@
++{
++global:
++	nm_vpn_editor_factory_sstp_custom;
++local:
++	*;
++};
+diff --git a/properties/libnm-vpn-plugin-sstp-editor.ver b/properties/libnm-vpn-plugin-sstp-editor.ver
+deleted file mode 100644
+index 63b25fc..0000000
+--- a/properties/libnm-vpn-plugin-sstp-editor.ver
++++ /dev/null
+@@ -1,6 +0,0 @@
+-{
+-global:
+-	nm_vpn_editor_factory_sstp;
+-local:
+-	*;
+-};
+diff --git a/properties/nm-sstp-dialog.ui b/properties/nm-sstp-dialog.ui
+index 399e644..69d41bd 100644
+--- a/properties/nm-sstp-dialog.ui
++++ b/properties/nm-sstp-dialog.ui
+@@ -100,6 +100,31 @@ config: the first parameter of sstp</property>
+                 <property name="top-attach">0</property>
+               </packing>
+             </child>
++            <child>
++              <object class="GtkEntry" id="host_entry">
++                <property name="visible">True</property>
++                <property name="can-focus">True</property>
++                <property name="tooltip-text" translatable="yes">Optional SSTP virtual host name passed separately from the gateway address (sstpc --host).</property>
++                <property name="hexpand">True</property>
++              </object>
++              <packing>
++                <property name="left-attach">1</property>
++                <property name="top-attach">1</property>
++              </packing>
++            </child>
++            <child>
++              <object class="GtkLabel" id="label_host">
++                <property name="visible">True</property>
++                <property name="can-focus">False</property>
++                <property name="label" translatable="yes">_Host:</property>
++                <property name="use-underline">True</property>
++                <property name="mnemonic-widget">host_entry</property>
++              </object>
++              <packing>
++                <property name="left-attach">0</property>
++                <property name="top-attach">1</property>
++              </packing>
++            </child>
+             <child>
+               <placeholder/>
+             </child>
+diff --git a/properties/nm-sstp-editor-plugin.c b/properties/nm-sstp-editor-plugin.c
+index 619a7ef..38048ca 100644
+--- a/properties/nm-sstp-editor-plugin.c
++++ b/properties/nm-sstp-editor-plugin.c
+@@ -161,13 +161,13 @@ get_editor (NMVpnEditorPlugin *iface, NMConnection *connection, GError **error)
+ 	g_module_close (self_module);
+ 
+ 	if (gtk3_only_symbol) {
+-		editor = "libnm-vpn-plugin-sstp-editor.so";
++		editor = "libnm-vpn-plugin-sstp-editor-custom.so";
+ 	} else {
+-		editor = "libnm-gtk4-vpn-plugin-sstp-editor.so";
++		editor = "libnm-gtk4-vpn-plugin-sstp-custom-editor.so";
+ 	}
+ 
+ 	retval = nm_vpn_plugin_utils_load_editor (editor,
+-	                                          "nm_vpn_editor_factory_sstp",
++	                                          "nm_vpn_editor_factory_sstp_custom",
+ 	                                          _call_editor_factory,
+ 	                                          iface,
+ 	                                          connection,
+diff --git a/properties/nm-sstp-editor-plugin.h b/properties/nm-sstp-editor-plugin.h
+index 75d5115..e06ae4a 100644
+--- a/properties/nm-sstp-editor-plugin.h
++++ b/properties/nm-sstp-editor-plugin.h
+@@ -46,9 +46,9 @@ typedef NMVpnEditor *(*NMVpnEditorFactory) (NMVpnEditorPlugin *editor_plugin,
+                                             GError **error);
+ 
+ NMVpnEditor *
+-nm_vpn_editor_factory_sstp (NMVpnEditorPlugin *editor_plugin,
+-                            NMConnection *connection,
+-                            GError **error);
++nm_vpn_editor_factory_sstp_custom (NMVpnEditorPlugin *editor_plugin,
++                                   NMConnection *connection,
++                                   GError **error);
+ 
+ #endif /* __NM_SSTP_EDITOR_PLUGIN_H__ */
+ 
+diff --git a/properties/nm-sstp-editor.c b/properties/nm-sstp-editor.c
+index 70a162f..011065c 100644
+--- a/properties/nm-sstp-editor.c
++++ b/properties/nm-sstp-editor.c
+@@ -132,6 +132,47 @@ validate (SstpPluginUiWidget *self, GError **error)
+         return FALSE;
+     }
+ 
++    widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "host_entry"));
++    if (widget) {
++        str = gtk_editable_get_text (GTK_EDITABLE (widget));
++        if (str && strlen (str)) {
++            const char *p;
++            size_t len = strlen (str);
++            char **labels;
++            int i, nlabels;
++            gboolean invalid = FALSE;
++
++            if (len > 253 || str[len - 1] == '.')
++                invalid = TRUE;
++            for (p = str; *p && !invalid; p++) {
++                if (!(g_ascii_isalnum (*p) || *p == '.' || *p == '-'))
++                    invalid = TRUE;
++            }
++            if (!invalid) {
++                labels = g_strsplit (str, ".", -1);
++                nlabels = g_strv_length (labels);
++                for (i = 0; i < nlabels; i++) {
++                    size_t llen = strlen (labels[i]);
++                    if (llen == 0 || llen > 63 ||
++                        labels[i][0] == '-' || labels[i][llen - 1] == '-') {
++                        invalid = TRUE;
++                        break;
++                    }
++                }
++                g_strfreev (labels);
++            }
++            if (invalid) {
++                gtk_style_context_add_class (gtk_widget_get_style_context (widget), "error");
++                g_set_error (error,
++                             NMV_EDITOR_PLUGIN_ERROR,
++                             NMV_EDITOR_PLUGIN_ERROR_INVALID_PROPERTY,
++                             _("Invalid hostname."));
++                return FALSE;
++            }
++        }
++        gtk_style_context_remove_class (gtk_widget_get_style_context (widget), "error");
++    }
++
+     widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "auth_combo"));
+     g_return_val_if_fail (widget, FALSE);
+ 
+@@ -568,6 +609,17 @@ init_plugin_ui (SstpPluginUiWidget *self, NMConnection *connection, GError **err
+     }
+     g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
+ 
++    /* Host */
++    widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "host_entry"));
++    g_return_val_if_fail (widget != NULL, FALSE);
++    if (s_vpn) {
++        value = nm_setting_vpn_get_data_item (s_vpn, NM_SSTP_KEY_HOST);
++        if (value && strlen (value)) {
++            gtk_editable_set_text (GTK_EDITABLE (widget), value);
++        }
++    }
++    g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
++
+     /* Authentication Combo */
+     widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "auth_combo"));
+     g_return_val_if_fail (widget != NULL, FALSE);
+@@ -690,6 +742,12 @@ update_connection (NMVpnEditor *iface,
+         nm_setting_vpn_add_data_item (s_vpn, NM_SSTP_KEY_GATEWAY, str);
+     }
+ 
++    widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "host_entry"));
++    str = gtk_editable_get_text (GTK_EDITABLE (widget));
++    if (str && strlen (str)) {
++        nm_setting_vpn_add_data_item (s_vpn, NM_SSTP_KEY_HOST, str);
++    }
++
+     auth_type = get_auth_type (priv->builder);
+     if (auth_type) {
+ 
+@@ -932,7 +990,7 @@ sstp_plugin_ui_widget_interface_init (NMVpnEditorInterface *iface_class)
+ #include "nm-sstp-editor-plugin.h"
+ 
+ G_MODULE_EXPORT NMVpnEditor *
+-nm_vpn_editor_factory_sstp (NMVpnEditorPlugin *editor_plugin,
++nm_vpn_editor_factory_sstp_custom (NMVpnEditorPlugin *editor_plugin,
+                             NMConnection *connection,
+                             GError **error)
+ {
+diff --git a/shared/nm-service-defines.h b/shared/nm-service-defines.h
+index 98e5950..af8f66b 100644
+--- a/shared/nm-service-defines.h
++++ b/shared/nm-service-defines.h
+@@ -25,17 +25,18 @@
+ 
+ #define NM_SSTP_MAX_BUFLEN                      (255)
+ 
+-#define NM_DBUS_SERVICE_SSTP                    "org.freedesktop.NetworkManager.sstp"
++#define NM_DBUS_SERVICE_SSTP                    "org.freedesktop.NetworkManager.sstp.custom"
+ 
+ /* For the NM <-> VPN plugin service */
+-#define NM_DBUS_INTERFACE_SSTP                  "org.freedesktop.NetworkManager.sstp"
+-#define NM_DBUS_PATH_SSTP                       "/org/freedesktop/NetworkManager/sstp"
++#define NM_DBUS_INTERFACE_SSTP                  "org.freedesktop.NetworkManager.sstp.custom"
++#define NM_DBUS_PATH_SSTP                       "/org/freedesktop/NetworkManager/sstp/custom"
+ 
+ /* For the VPN plugin service <-> PPP plugin */
+-#define NM_DBUS_INTERFACE_SSTP_PPP              "org.freedesktop.NetworkManager.sstp.ppp"
+-#define NM_DBUS_PATH_SSTP_PPP                   "/org/freedesktop/NetworkManager/sstp/ppp"
++#define NM_DBUS_INTERFACE_SSTP_PPP              "org.freedesktop.NetworkManager.sstp.custom.ppp"
++#define NM_DBUS_PATH_SSTP_PPP                   "/org/freedesktop/NetworkManager/sstp/custom/ppp"
+ 
+ #define NM_SSTP_KEY_GATEWAY                     "gateway"
++#define NM_SSTP_KEY_HOST                        "host"
+ #define NM_SSTP_KEY_UUID                        "uuid"
+ #define NM_SSTP_KEY_USER                        "user"
+ #define NM_SSTP_KEY_PASSWORD                    "password"
+diff --git a/src/nm-sstp-pppd-service.xml b/src/nm-sstp-pppd-service.xml
+index f054589..2c4dab6 100644
+--- a/src/nm-sstp-pppd-service.xml
++++ b/src/nm-sstp-pppd-service.xml
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="UTF-8" ?>
+ 
+ <node name="/">
+-  <interface name="org.freedesktop.NetworkManager.sstp.ppp">
++  <interface name="org.freedesktop.NetworkManager.sstp.custom.ppp">
+     <method name="NeedSecrets">
+       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_sstp_service_need_secrets"/>
+       <arg name="username" type="s" direction="out"/>
+diff --git a/src/nm-sstp-service.c b/src/nm-sstp-service.c
+index 8b0beca..ddf592e 100644
+--- a/src/nm-sstp-service.c
++++ b/src/nm-sstp-service.c
+@@ -67,12 +67,12 @@ typedef struct {
+     GPid pid;
+     guint32 ppp_timeout_handler;
+     NMConnection *connection;
+-    NMDBusSstpPpp *dbus_skeleton;
++    NMDBusSstpCustomPpp *dbus_skeleton;
+ } NMSstpPluginPrivate;
+ 
+ #define NM_SSTP_PLUGIN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SSTP_PLUGIN, NMSstpPluginPrivate))
+ 
+-#define NM_SSTP_PPPD_PLUGIN PLUGINDIR "/nm-sstp-pppd-plugin.so"
++#define NM_SSTP_PPPD_PLUGIN PLUGINDIR "/nm-sstp-pppd-plugin-custom.so"
+ #define NM_SSTP_WAIT_PPPD 10000 /* 10 seconds */
+ #define NM_SSTP_MTU_DEFAULT "1400"
+ #define SSTP_SERVICE_SECRET_TRIES "sstp-service-secret-tries"
+@@ -109,6 +109,7 @@ typedef struct {
+ 
+ static const ValidProperty valid_properties[] = {
+     { NM_SSTP_KEY_GATEWAY,                   G_TYPE_STRING,  TRUE  },
++    { NM_SSTP_KEY_HOST,                      G_TYPE_STRING,  FALSE },
+     { NM_SSTP_KEY_USER,                      G_TYPE_STRING,  FALSE },
+     { NM_SSTP_KEY_PASSWORD_FLAGS,            G_TYPE_STRING,  FALSE },
+     { NM_SSTP_KEY_DOMAIN,                    G_TYPE_STRING,  FALSE },
+@@ -468,12 +469,14 @@ construct_pppd_args (NMSstpPlugin *plugin,
+     GPtrArray *args = NULL;
+     const char *value, *sstp_binary;
+     const char *proxy_server, *proxy_port;
++    const char *host = NULL;
+     gs_free char *ipparam = NULL;
+     gs_free char *ca_cert = NULL;
+     gs_free char *ca_path = NULL;
+     gs_free char *proxy = NULL;
+     gs_free char *uuid = NULL;
+     gs_free char *pty = NULL;
++    gs_free char *host_quoted = NULL;
+     gboolean ign_cert = FALSE;
+     gboolean tls_ext = FALSE;
+     gboolean is_pkcs12 = FALSE;
+@@ -499,6 +502,44 @@ construct_pppd_args (NMSstpPlugin *plugin,
+         goto error;
+     }
+ 
++    /* Read optional Host option */
++    host = nm_setting_vpn_get_data_item (s_vpn, NM_SSTP_KEY_HOST);
++    if (host && strlen (host)) {
++        const char *p;
++        size_t len = strlen (host);
++        char **labels;
++        int i, nlabels;
++
++        if (len > 253 || host[len - 1] == '.') {
++            g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_INVALID_CONNECTION,
++                         "%s", _("Invalid SSTP host."));
++            goto error;
++        }
++        for (p = host; *p; p++) {
++            if (!(g_ascii_isalnum (*p) || *p == '.' || *p == '-')) {
++                g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_INVALID_CONNECTION,
++                             "%s", _("Invalid SSTP host."));
++                goto error;
++            }
++        }
++        labels = g_strsplit (host, ".", -1);
++        nlabels = g_strv_length (labels);
++        for (i = 0; i < nlabels; i++) {
++            size_t llen = strlen (labels[i]);
++            if (llen == 0 || llen > 63 ||
++                labels[i][0] == '-' || labels[i][llen - 1] == '-') {
++                g_strfreev (labels);
++                g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_INVALID_CONNECTION,
++                             "%s", _("Invalid SSTP host."));
++                goto error;
++            }
++        }
++        g_strfreev (labels);
++        host_quoted = g_shell_quote (host);
++    } else {
++        host = NULL;
++    }
++
+     /* Create the argument vector for pppd */
+     args = g_ptr_array_new ();
+     g_ptr_array_add (args, (gpointer) g_strdup (pppd));
+@@ -554,10 +595,12 @@ construct_pppd_args (NMSstpPlugin *plugin,
+ 
+     /* Add the PTY option */
+     ipparam = g_strdup_printf ("nm-pptp-service-%d", getpid ());    /* Using "pptp" to avoid having /etc/ppp/ip-up.d/0000usepeerdns replace /etc/resolv.conf */
+-    pty = g_strdup_printf ("%s %s %s %s --nolaunchpppd %s %s --ipparam %s %s %s",
++    pty = g_strdup_printf ("%s %s %s %s %s %s --nolaunchpppd %s %s --ipparam %s %s %s",
+                            sstp_binary, gwaddr,
+                            ign_cert == TRUE ? "--cert-warn" : "",
+                            tls_ext == TRUE ? "--tls-ext" : "",
++                           host ? "--host" : "",
++                           host_quoted ? host_quoted : "",
+                            gl.debug ? "--log-level 5" : "",
+                            proxy ? proxy : "",
+                            ipparam,
+@@ -978,7 +1021,7 @@ remove_timeout_handler (NMSstpPlugin *plugin)
+ }
+ 
+ static gboolean
+-handle_need_secrets (NMDBusSstpPpp *object,
++handle_need_secrets (NMDBusSstpCustomPpp *object,
+                      GDBusMethodInvocation *invocation,
+                      gpointer user_data)
+ {
+@@ -1025,7 +1068,7 @@ handle_need_secrets (NMDBusSstpPpp *object,
+         else
+             username = g_strdup (user);
+ 
+-        nmdbus_sstp_ppp_complete_need_secrets (object, invocation, username, password);
++        nmdbus_sstp_custom_ppp_complete_need_secrets (object, invocation, username, password);
+         g_free (username);
+ 
+         return TRUE;
+@@ -1063,13 +1106,13 @@ handle_need_secrets (NMDBusSstpPpp *object,
+             return FALSE;
+         }
+ 
+-        nmdbus_sstp_ppp_complete_need_secrets (object, invocation, user, password);
++        nmdbus_sstp_custom_ppp_complete_need_secrets (object, invocation, user, password);
+         return TRUE;
+     }
+ }
+ 
+ static gboolean
+-handle_set_state (NMDBusSstpPpp *object,
++handle_set_state (NMDBusSstpCustomPpp *object,
+                   GDBusMethodInvocation *invocation,
+                   guint arg_state,
+                   gpointer user_data)
+@@ -1084,7 +1127,7 @@ handle_set_state (NMDBusSstpPpp *object,
+ }
+ 
+ static gboolean
+-handle_set_config (NMDBusSstpPpp *object,
++handle_set_config (NMDBusSstpCustomPpp *object,
+                    GDBusMethodInvocation *invocation,
+                    GVariant *arg_config,
+                    gpointer user_data)
+@@ -1116,7 +1159,7 @@ handle_set_config (NMDBusSstpPpp *object,
+ }
+ 
+ static gboolean
+-handle_set_ip4_config (NMDBusSstpPpp *object,
++handle_set_ip4_config (NMDBusSstpCustomPpp *object,
+                        GDBusMethodInvocation *invocation,
+                        GVariant *arg_config,
+                        gpointer user_data)
+@@ -1148,7 +1191,7 @@ handle_set_ip4_config (NMDBusSstpPpp *object,
+ }
+ 
+ static gboolean
+-handle_set_ip6_config (NMDBusSstpPpp *object,
++handle_set_ip6_config (NMDBusSstpCustomPpp *object,
+                        GDBusMethodInvocation *invocation,
+                        GVariant *arg_config,
+                        gpointer user_data)
+@@ -1419,7 +1462,7 @@ init_sync (GInitable *object, GCancellable *cancellable, GError **error)
+     g_signal_connect (G_OBJECT (object), "state-changed", G_CALLBACK (state_changed_cb), NULL);
+ 
+     bus = nm_vpn_service_plugin_get_connection (NM_VPN_SERVICE_PLUGIN (object)),
+-    priv->dbus_skeleton = nmdbus_sstp_ppp_skeleton_new ();
++    priv->dbus_skeleton = nmdbus_sstp_custom_ppp_skeleton_new ();
+     if (!g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (priv->dbus_skeleton),
+                                            bus,
+                                            NM_DBUS_PATH_SSTP_PPP,
+@@ -1430,7 +1473,7 @@ init_sync (GInitable *object, GCancellable *cancellable, GError **error)
+     }
+ 
+     g_dbus_connection_register_object (bus, NM_DBUS_PATH_SSTP_PPP,
+-                                       nmdbus_sstp_ppp_interface_info (),
++                                       nmdbus_sstp_custom_ppp_interface_info (),
+                                        NULL, NULL, NULL, NULL);
+ 
+     g_signal_connect (priv->dbus_skeleton, "handle-need-secrets", G_CALLBACK (handle_need_secrets), object);

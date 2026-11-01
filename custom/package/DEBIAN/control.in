@@ -1,0 +1,18 @@
+Package: plasma-nm-sstp-custom
+Version: @VERSION@
+Section: kde
+Priority: optional
+Architecture: @ARCH@
+Maintainer: plasma-nm-sstp-custom packagers <root@localhost>
+Installed-Size: @INSTALLED_SIZE@
+Depends: plasma-nm, libc6, libstdc++6, libkf6coreaddons6, libkf6i18n6, libkf6kiowidgets6, libkf6networkmanagerqt6, libkf6widgetsaddons6, libqt6core6 | libqt6core6t64, libqt6gui6, libqt6widgets6
+Description: Custom SSTP VPN UI plugin for plasma-nm
+ This package provides a standalone Plasma NetworkManager UI plugin for a
+ custom SSTP VPN backend that is registered under its own service type
+ (org.freedesktop.NetworkManager.sstp.custom) and its own D-Bus identifiers.
+ .
+ It installs only the additional plugin module
+ plasmanetworkmanagement_sstp-customui.so and does not replace, remove or
+ otherwise modify the stock SSTP UI shipped by plasma-nm. Both plugins can be
+ installed side by side and are selected at runtime from the VPN service type
+ of the connection profile.

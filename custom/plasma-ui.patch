@@ -1,0 +1,1601 @@
+diff --git a/vpn/CMakeLists.txt b/vpn/CMakeLists.txt
+index 0e4e723b5..e95ebc77b 100644
+--- a/vpn/CMakeLists.txt
++++ b/vpn/CMakeLists.txt
+@@ -6,6 +6,7 @@ add_subdirectory(openvpn)
+ add_subdirectory(pptp)
+ add_subdirectory(ssh)
+ add_subdirectory(sstp)
++add_subdirectory(sstp-custom)
+ add_subdirectory(strongswan)
+ add_subdirectory(vpnc)
+ 
+diff --git a/vpn/sstp-custom/CMakeLists.txt b/vpn/sstp-custom/CMakeLists.txt
+new file mode 100644
+index 000000000..05782e24f
+--- /dev/null
++++ b/vpn/sstp-custom/CMakeLists.txt
+@@ -0,0 +1,31 @@
++add_definitions(-DTRANSLATION_DOMAIN=\"plasmanetworkmanagement_sstp-customui\")
++
++add_library(plasmanetworkmanagement_sstp-customui MODULE)
++
++target_sources(plasmanetworkmanagement_sstp-customui PRIVATE
++    sstp.cpp
++    sstpwidget.cpp
++    sstpauth.cpp
++    sstp.h
++    sstpwidget.h
++    sstpauth.h
++)
++
++ki18n_wrap_ui(plasmanetworkmanagement_sstp-customui
++    sstpwidget.ui
++    sstpadvanced.ui
++    sstpauth.ui
++)
++
++target_link_libraries(plasmanetworkmanagement_sstp-customui
++    plasmanm_internal
++    plasmanm_editor
++    KF6::CoreAddons
++    KF6::I18n
++    KF6::KIOWidgets
++    KF6::WidgetsAddons
++)
++
++install(TARGETS plasmanetworkmanagement_sstp-customui
++    DESTINATION ${KDE_INSTALL_PLUGINDIR}/plasma/network/vpn
++)
+diff --git a/vpn/sstp-custom/Messages.sh b/vpn/sstp-custom/Messages.sh
+new file mode 100644
+index 000000000..1cb57b8e3
+--- /dev/null
++++ b/vpn/sstp-custom/Messages.sh
+@@ -0,0 +1,4 @@
++#! /usr/bin/env bash
++$EXTRACTRC `find . -name "*.ui" -o -name "*.rc"` >> rc.cpp
++$XGETTEXT `find . -name "*.cpp"` -o $podir/plasmanetworkmanagement_sstp-customui.pot
++rm -f rc.cpp
+diff --git a/vpn/sstp-custom/nm-sstp-custom-service.h b/vpn/sstp-custom/nm-sstp-custom-service.h
+new file mode 100644
+index 000000000..9f0d686af
+--- /dev/null
++++ b/vpn/sstp-custom/nm-sstp-custom-service.h
+@@ -0,0 +1,52 @@
++/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
++/* nm-sstp-custom-service - SSTP VPN integration with NetworkManager (custom backend)
++
++    SPDX-License-Identifier: GPL-2.0-or-later
++
++    SPDX-FileCopyrightText: Dan Williams <dcbw@redhat.com>
++    SPDX-FileCopyrightText: 2008, 2014 Red Hat Inc.
++*/
++
++#ifndef NM_SSTP_CUSTOM_SERVICE_H
++#define NM_SSTP_CUSTOM_SERVICE_H
++
++/* For the NM <-> VPN plugin service */
++#define NM_DBUS_SERVICE_SSTP "org.freedesktop.NetworkManager.sstp.custom"
++#define NM_DBUS_INTERFACE_SSTP "org.freedesktop.NetworkManager.sstp.custom"
++#define NM_DBUS_PATH_SSTP "/org/freedesktop/NetworkManager/sstp/custom"
++
++/* For the VPN plugin service <-> PPP plugin */
++#define NM_DBUS_INTERFACE_SSTP_PPP "org.freedesktop.NetworkManager.sstp.custom.ppp"
++#define NM_DBUS_PATH_SSTP_PPP "/org/freedesktop/NetworkManager/sstp/custom/ppp"
++
++#define NM_SSTP_KEY_GATEWAY "gateway"
++#define NM_SSTP_KEY_HOST "host"
++#define NM_SSTP_KEY_UUID "uuid"
++#define NM_SSTP_KEY_USER "user"
++#define NM_SSTP_KEY_PASSWORD "password"
++#define NM_SSTP_KEY_PASSWORD_FLAGS "password-flags"
++#define NM_SSTP_KEY_DOMAIN "domain"
++#define NM_SSTP_KEY_CA_CERT "ca-cert"
++#define NM_SSTP_KEY_IGN_CERT_WARN "ignore-cert-warn"
++#define NM_SSTP_KEY_REFUSE_EAP "refuse-eap"
++#define NM_SSTP_KEY_REFUSE_PAP "refuse-pap"
++#define NM_SSTP_KEY_REFUSE_CHAP "refuse-chap"
++#define NM_SSTP_KEY_REFUSE_MSCHAP "refuse-mschap"
++#define NM_SSTP_KEY_REFUSE_MSCHAPV2 "refuse-mschapv2"
++#define NM_SSTP_KEY_REQUIRE_MPPE "require-mppe"
++#define NM_SSTP_KEY_REQUIRE_MPPE_40 "require-mppe-40"
++#define NM_SSTP_KEY_REQUIRE_MPPE_128 "require-mppe-128"
++#define NM_SSTP_KEY_MPPE_STATEFUL "mppe-stateful"
++#define NM_SSTP_KEY_NOBSDCOMP "nobsdcomp"
++#define NM_SSTP_KEY_NODEFLATE "nodeflate"
++#define NM_SSTP_KEY_NO_VJ_COMP "no-vj-comp"
++#define NM_SSTP_KEY_LCP_ECHO_FAILURE "lcp-echo-failure"
++#define NM_SSTP_KEY_LCP_ECHO_INTERVAL "lcp-echo-interval"
++#define NM_SSTP_KEY_UNIT_NUM "unit"
++#define NM_SSTP_KEY_PROXY_SERVER "proxy-server"
++#define NM_SSTP_KEY_PROXY_PORT "proxy-port"
++#define NM_SSTP_KEY_PROXY_USER "proxy-user"
++#define NM_SSTP_KEY_PROXY_PASSWORD "proxy-password"
++#define NM_SSTP_KEY_PROXY_PASSWORD_FLAGS "proxy-password-flags"
++
++#endif /* NM_SSTP_CUSTOM_SERVICE_H */
+diff --git a/vpn/sstp-custom/plasmanetworkmanagement_sstp-customui.json b/vpn/sstp-custom/plasmanetworkmanagement_sstp-customui.json
+new file mode 100644
+index 000000000..0defecffc
+--- /dev/null
++++ b/vpn/sstp-custom/plasmanetworkmanagement_sstp-customui.json
+@@ -0,0 +1,157 @@
++{
++    "KPlugin": {
++        "Authors": [
++            {
++                "Email": "jgrulich@redhat.com",
++                "Name": "Jan Grulich",
++                "Name[ar]": "يان جروليتش",
++                "Name[az]": "Jan Grulich",
++                "Name[be]": "Jan Grulich",
++                "Name[bg]": "Jan Grulich",
++                "Name[ca@valencia]": "Jan Grulich",
++                "Name[ca]": "Jan Grulich",
++                "Name[cs]": "Jan Grulich",
++                "Name[da]": "Jan Grulich",
++                "Name[de]": "Jan Grulich",
++                "Name[el]": "Jan Grulich",
++                "Name[en_GB]": "Jan Grulich",
++                "Name[eo]": "Jan Grulich",
++                "Name[es]": "Jan Grulich",
++                "Name[eu]": "Jan Grulich",
++                "Name[fi]": "Jan Grulich",
++                "Name[fr]": "Jan Grulich",
++                "Name[gl]": "Jan Grulich",
++                "Name[he]": "יאן גרוליך",
++                "Name[hi]": "जान ग्रुलिच",
++                "Name[hu]": "Jan Grulich",
++                "Name[ia]": "Jan Grulich",
++                "Name[is]": "Jan Grulich",
++                "Name[it]": "Jan Grulich",
++                "Name[ja]": "Jan Grulich",
++                "Name[ka]": "Jan Grulich",
++                "Name[ko]": "Jan Grulich",
++                "Name[lt]": "Jan Grulich",
++                "Name[lv]": "Jan Grulich",
++                "Name[nl]": "Jan Grulich",
++                "Name[nn]": "Jan Gruhlich",
++                "Name[pl]": "Jan Grulich",
++                "Name[pt]": "Jan Grulich",
++                "Name[pt_BR]": "Jan Grulich",
++                "Name[ro]": "Jan Grulich",
++                "Name[ru]": "Jan Grulich",
++                "Name[sa]": "जन ग्रुलिच्",
++                "Name[sk]": "Jan Grulich",
++                "Name[sl]": "Jan Grulich",
++                "Name[sv]": "Jan Grulich",
++                "Name[ta]": "ஜான் குரூலிச்",
++                "Name[tr]": "Jan Grulich",
++                "Name[uk]": "Jan Grulich",
++                "Name[zh_CN]": "Jan Grulich",
++                "Name[zh_TW]": "Jan Grulich"
++            }
++        ],
++        "Category": "VPNService",
++        "Description": "Compatible with Microsoft and other SSTP VPN servers",
++        "Description[ar]": "متوافق مع «مايكروسوفت» وخواديم SSTP VPN الأخرى",
++        "Description[az]": "Microsoft və digərSSTP VPN serverləri ilə uyğun",
++        "Description[be]": "Сумяшчальна з Microsoft і іншымі серверамі SSTP VPN",
++        "Description[bg]": "Съвместим с Microsoft и други SSTP VPN сървъри",
++        "Description[ca@valencia]": "Compatible amb Microsoft i altres servidors VPN sobre SSTP",
++        "Description[ca]": "Compatible amb Microsoft i altres servidors VPN sobre SSTP",
++        "Description[cs]": "Kompatibilní se servery Microsoft  a jinými SSTP VPN",
++        "Description[da]": "Kompatibel med Microsoft og andre SSTP VPN-servere",
++        "Description[de]": "Mit SSTP-VPN-Servern von Microsoft und anderen kompatibel",
++        "Description[el]": "Συμβατό με διακομιστές Microsoft και άλλους διακομιστές SSTP VPN",
++        "Description[en_GB]": "Compatible with Microsoft and other SSTP VPN servers",
++        "Description[eo]": "Kongrua kun Microsoft kaj aliaj SSTP VPN-serviloj",
++        "Description[es]": "Compatible con Microsoft y otros servidores SSTP VPN",
++        "Description[eu]": "Microsoft eta beste SSTP VPN zerbitzari batzuekin bateragarria",
++        "Description[fi]": "Yhteensopiva Microsoftin ja muiden SSTP-VPN-palvelinten kanssa",
++        "Description[fr]": "Compatible avec les serveurs Microsoft et autres VPN « SSTP »",
++        "Description[gl]": "Compatíbel con servidores de VPN de Microsoft e outros servidores de VPN que usen SSTP.",
++        "Description[he]": "תואם למיקרוסופט ולשרתי SSTP VPN אחרים",
++        "Description[hi]": "माइक्रोसॉफ्ट और अन्य SSTP VPN सर्वरों के साथ संगत",
++        "Description[hu]": "Kompatibilis a Microsoft és más SSTP VPN kiszolgálókkal",
++        "Description[ia]": "Compatibile con Microsoft e altere servitores SSTP VPN",
++        "Description[is]": "Samhæft við Microsoft og aðra SSTP VPN netþjóna",
++        "Description[it]": "Compatibile con server VPN SSTP di Microsoft e altri",
++        "Description[ja]": "Microsoft と他の SSTP VPN サーバに対応",
++        "Description[ka]": "Microsoft და სხვა SSTP VPN სერვერებთან თავსებადი",
++        "Description[ko]": "Microsoft 및 기타 SSTP VPN 서버와 호환됨",
++        "Description[lt]": "Suderinamas su „Microsoft“ ir kitais SSTP VPN serveriais",
++        "Description[lv]": "Saderīgs ar „Microsoft“ un citiem SSTP VPN serveriem",
++        "Description[nl]": "Compatibel met Microsoft en andere SSTP VPN servers",
++        "Description[nn]": "Kompatibel med Microsoft og andre SSTP VPN-tenarar",
++        "Description[pa]": "ਮਾਈਕਰੋਸਾਫਟ ਅਤੇ ਹੋਰ SSTP VPN ਸਰਵਰਾਂ ਲਈ ਢੁਕਵਾਂ",
++        "Description[pl]": "Zgodny z serwerami VPN Microsoft-u i innymi SSTP",
++        "Description[pt]": "Compatível com os servidores de VPN SSTP da Microsoft e outros",
++        "Description[pt_BR]": "Compatível com servidores VPN SSTP da Microsoft e outros",
++        "Description[ru]": "Совместимая с серверами SSTP от Microsoft и другими",
++        "Description[sa]": "Microsoft इत्यादिभिः SSTP VPN सर्वरैः सह सङ्गतम्",
++        "Description[sk]": "Kompatibilné so servermi Microsoft a inými servermi SSTP VPN",
++        "Description[sl]": "Združljiv z Microsoftovimi in drugimi SSTP strežniki VPN",
++        "Description[sv]": "Kompatibelt med Microsoft och andra SSTP VPN-servrar",
++        "Description[tr]": "Microsoft ve diğer SSTP VPN sunucuları ile uyumlu",
++        "Description[uk]": "Сумісні з Microsoft та іншими серверами VPN SSTP",
++        "Description[zh_CN]": "兼容 Microsoft 和其他 SSTP VPN 服务器",
++        "Description[zh_TW]": "與微軟和其他 SSTP VPN 伺服器相容",
++        "EnabledByDefault": false,
++        "Icon": "",
++        "License": "GPL",
++        "Name": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[ar]": "ميفاق المقبس الآمن النفقي (SSTP Custom)",
++        "Name[az]": "Soketlərin təhlükəsiz tunneləşməsi protokolu (SSTP Custom)",
++        "Name[be]": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[bg]": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[ca@valencia]": "Protocol per a crear túnels amb sòcols segurs (SSTP Custom)",
++        "Name[ca]": "Protocol per a crear túnels amb sòcols segurs (SSTP Custom)",
++        "Name[cs]": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[da]": "Secure Socket tunneling-protokol (SSTP Custom)",
++        "Name[de]": "Secure-Socket-Tunnel-Protokoll (SSTP Custom)",
++        "Name[el]": "Πρωτόκολλο Secure Socket Tunneling (SSTP Custom)",
++        "Name[en_GB]": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[eo]": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[es]": "Protocolo de túneles de conexiones seguras (SSTP Custom)",
++        "Name[et]": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[eu]": "Socket seguruen tunel-protokoloa (SSTP Custom)",
++        "Name[fi]": "Secure Socket -tunnelointiyhteyskäytäntö (SSTP Custom)",
++        "Name[fr]": "Protocole tunnel avec socket sécurisé (SSTP Custom)",
++        "Name[gl]": "Protocolo de canalización de toma segura (SSTP Custom)",
++        "Name[he]": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[hi]": "सुरक्षित सॉकेट टनलिंग प्रोटोकॉल (SSTP Custom)",
++        "Name[hsb]": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[hu]": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[ia]": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[id]": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[is]": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[it]": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[ja]": "セキュアソケット トンネリングプロトコル (SSTP Custom)",
++        "Name[ka]": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[ko]": "보안 소켓 터널링 프로토콜(SSTP Custom)",
++        "Name[lt]": "Saugaus lizdo tuneliavimo protokolas (SSTP Custom)",
++        "Name[lv]": "Drošais ligzdas tunelēšanas protokols (SSTP Custom)",
++        "Name[nl]": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[nn]": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[pa]": "ਸਕਿਉਰ ਸਾਕਟ ਟਨਲਿੰਗ ਪਰੋਟੋਕਾਲ (SSTP Custom)",
++        "Name[pl]": "Protokół tunelujący bezpiecznego gniazda (SSTP Custom)",
++        "Name[pt]": "Protocolo de Túneis por 'Socket' Seguro (SSTP Custom)",
++        "Name[pt_BR]": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[ro]": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[ru]": "Протокол защищённого туннелирования сокетов (SSTP Custom)",
++        "Name[sa]": "सुरक्षित सॉकेट् सुरङ्गीकरण प्रोटोकॉल (SSTP Custom) 1.1.",
++        "Name[sk]": "Secure Socket Tunneling Protocol (SSTP Custom)",
++        "Name[sl]": "Protokol za tuneliranje z varnim vtičem (SSTP Custom)",
++        "Name[sr@ijekavian]": "ССТП (безбедни сокетни тунелски протокол)",
++        "Name[sr@ijekavianlatin]": "SSTP Custom) (bezbedni soketni tunelski protokol)",
++        "Name[sr@latin]": "SSTP Custom) (bezbedni soketni tunelski protokol)",
++        "Name[sr]": "ССТП (безбедни сокетни тунелски протокол)",
++        "Name[sv]": "Säkert uttagstunnelprotokoll (SSTP Custom)",
++        "Name[tr]": "Güvenli Yuva Tünel Protokolü (SSTP Custom)",
++        "Name[uk]": "Протокол тунелювання із безпечними сокетами (SSTP Custom)",
++        "Name[zh_CN]": "安全套接字隧道协议 (SSTP Custom)",
++        "Name[zh_TW]": "安全 Socket 通道協定 (SSTP Custom)",
++        "Version": "0.1",
++        "Website": ""
++    },
++    "X-NetworkManager-Services": "org.freedesktop.NetworkManager.sstp.custom"
++}
+diff --git a/vpn/sstp-custom/sstp.cpp b/vpn/sstp-custom/sstp.cpp
+new file mode 100644
+index 000000000..3349c9f86
+--- /dev/null
++++ b/vpn/sstp-custom/sstp.cpp
+@@ -0,0 +1,42 @@
++/*
++    SPDX-FileCopyrightText: 2015 Jan Grulich <jgrulich@redhat.com>
++
++    SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
++*/
++
++#include "sstp.h"
++#include "sstpauth.h"
++#include "sstpwidget.h"
++
++#include <KPluginFactory>
++
++K_PLUGIN_CLASS_WITH_JSON(SstpCustomUiPlugin, "plasmanetworkmanagement_sstp-customui.json")
++
++SstpCustomUiPlugin::SstpCustomUiPlugin(QObject *parent, const QVariantList &)
++    : VpnUiPlugin(parent)
++{
++}
++
++SstpCustomUiPlugin::~SstpCustomUiPlugin() = default;
++
++SettingWidget *SstpCustomUiPlugin::widget(const NetworkManager::VpnSetting::Ptr &setting, QWidget *parent)
++{
++    return new SstpSettingWidget(setting, parent);
++}
++
++SettingWidget *SstpCustomUiPlugin::askUser(const NetworkManager::VpnSetting::Ptr &setting, const QStringList &hints, QWidget *parent)
++{
++    return new SstpAuthWidget(setting, hints, parent);
++}
++
++QString SstpCustomUiPlugin::suggestedFileName(const NetworkManager::ConnectionSettings::Ptr &connection) const
++{
++    Q_UNUSED(connection);
++
++    // TODO : implement suggested file name
++    return {};
++}
++
++#include "sstp.moc"
++
++#include "moc_sstp.cpp"
+diff --git a/vpn/sstp-custom/sstp.h b/vpn/sstp-custom/sstp.h
+new file mode 100644
+index 000000000..09b9a06b9
+--- /dev/null
++++ b/vpn/sstp-custom/sstp.h
+@@ -0,0 +1,23 @@
++/*
++    SPDX-FileCopyrightText: 2015 Jan Grulich <jgrulich@redhat.com>
++
++    SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
++*/
++
++#ifndef PLASMA_NM_SSTP_CUSTOM_H
++#define PLASMA_NM_SSTP_CUSTOM_H
++
++#include "vpnuiplugin.h"
++
++class Q_DECL_EXPORT SstpCustomUiPlugin : public VpnUiPlugin
++{
++    Q_OBJECT
++public:
++    explicit SstpCustomUiPlugin(QObject *parent = nullptr, const QVariantList & = QVariantList());
++    ~SstpCustomUiPlugin() override;
++    SettingWidget *widget(const NetworkManager::VpnSetting::Ptr &setting, QWidget *parent) override;
++    SettingWidget *askUser(const NetworkManager::VpnSetting::Ptr &setting, const QStringList &hints, QWidget *parent) override;
++    QString suggestedFileName(const NetworkManager::ConnectionSettings::Ptr &connection) const override;
++};
++
++#endif // PLASMA_NM_SSTP_CUSTOM_H
+diff --git a/vpn/sstp-custom/sstpadvanced.ui b/vpn/sstp-custom/sstpadvanced.ui
+new file mode 100644
+index 000000000..85de7bac3
+--- /dev/null
++++ b/vpn/sstp-custom/sstpadvanced.ui
+@@ -0,0 +1,394 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<ui version="4.0">
++ <class>SstpAdvanced</class>
++ <widget class="QWidget" name="SstpAdvanced">
++  <property name="geometry">
++   <rect>
++    <x>0</x>
++    <y>0</y>
++    <width>414</width>
++    <height>649</height>
++   </rect>
++  </property>
++  <property name="minimumSize">
++   <size>
++    <width>414</width>
++    <height>0</height>
++   </size>
++  </property>
++  <layout class="QGridLayout" name="gridLayout">
++   <item row="0" column="0">
++    <widget class="QTabWidget" name="tabWidget">
++     <property name="sizePolicy">
++      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
++       <horstretch>0</horstretch>
++       <verstretch>0</verstretch>
++      </sizepolicy>
++     </property>
++     <property name="minimumSize">
++      <size>
++       <width>0</width>
++       <height>0</height>
++      </size>
++     </property>
++     <property name="currentIndex">
++      <number>0</number>
++     </property>
++     <widget class="QWidget" name="pptpTab">
++      <attribute name="title">
++       <string>Point-to-Point</string>
++      </attribute>
++      <layout class="QGridLayout" name="gridLayout_2">
++       <item row="0" column="0">
++        <widget class="QGroupBox" name="grp_authenfication">
++         <property name="title">
++          <string>Authentication</string>
++         </property>
++         <layout class="QFormLayout" name="formLayout">
++          <property name="verticalSpacing">
++           <number>6</number>
++          </property>
++          <item row="0" column="0">
++           <widget class="QLabel" name="lbl_auth">
++            <property name="text">
++             <string>Allow following authentication methods:</string>
++            </property>
++            <property name="buddy">
++             <cstring>listWidget</cstring>
++            </property>
++           </widget>
++          </item>
++          <item row="1" column="0" colspan="2">
++           <widget class="QListWidget" name="listWidget">
++            <item>
++             <property name="text">
++              <string>PAP</string>
++             </property>
++             <property name="checkState">
++              <enum>Checked</enum>
++             </property>
++            </item>
++            <item>
++             <property name="text">
++              <string>CHAP</string>
++             </property>
++             <property name="checkState">
++              <enum>Checked</enum>
++             </property>
++            </item>
++            <item>
++             <property name="text">
++              <string>MSCHAP</string>
++             </property>
++             <property name="checkState">
++              <enum>Checked</enum>
++             </property>
++            </item>
++            <item>
++             <property name="text">
++              <string>MSCHAPv2</string>
++             </property>
++             <property name="checkState">
++              <enum>Checked</enum>
++             </property>
++            </item>
++            <item>
++             <property name="text">
++              <string>EAP</string>
++             </property>
++             <property name="checkState">
++              <enum>Checked</enum>
++             </property>
++            </item>
++           </widget>
++          </item>
++         </layout>
++        </widget>
++       </item>
++       <item row="1" column="0">
++        <widget class="QGroupBox" name="gb_MPPE">
++         <property name="toolTip">
++          <string>Use Microsoft Point-to-Point Encryption</string>
++         </property>
++         <property name="title">
++          <string>Use MPPE Encryption</string>
++         </property>
++         <property name="checkable">
++          <bool>true</bool>
++         </property>
++         <property name="checked">
++          <bool>false</bool>
++         </property>
++         <layout class="QFormLayout" name="formLayout_2">
++          <property name="verticalSpacing">
++           <number>6</number>
++          </property>
++          <item row="0" column="0">
++           <widget class="QLabel" name="lbl_MMPEcrypto">
++            <property name="maximumSize">
++             <size>
++              <width>100</width>
++              <height>16777215</height>
++             </size>
++            </property>
++            <property name="text">
++             <string>Crypto:</string>
++            </property>
++            <property name="buddy">
++             <cstring>cb_MPPECrypto</cstring>
++            </property>
++           </widget>
++          </item>
++          <item row="0" column="1">
++           <widget class="QComboBox" name="cb_MPPECrypto">
++            <property name="sizePolicy">
++             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
++              <horstretch>0</horstretch>
++              <verstretch>0</verstretch>
++             </sizepolicy>
++            </property>
++            <item>
++             <property name="text">
++              <string comment="like in use Any configuration">Any</string>
++             </property>
++            </item>
++            <item>
++             <property name="text">
++              <string>128 bit</string>
++             </property>
++            </item>
++            <item>
++             <property name="text">
++              <string>40 bit</string>
++             </property>
++            </item>
++           </widget>
++          </item>
++          <item row="1" column="0" colspan="2">
++           <widget class="QCheckBox" name="cb_statefulEncryption">
++            <property name="text">
++             <string>Use stateful encryption</string>
++            </property>
++           </widget>
++          </item>
++         </layout>
++        </widget>
++       </item>
++       <item row="2" column="0">
++        <widget class="QGroupBox" name="grp_cryptoAndCompression">
++         <property name="title">
++          <string>Compression</string>
++         </property>
++         <layout class="QFormLayout" name="formLayout_3">
++          <property name="labelAlignment">
++           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
++          </property>
++          <property name="verticalSpacing">
++           <number>6</number>
++          </property>
++          <item row="0" column="0">
++           <widget class="QCheckBox" name="cb_BSD">
++            <property name="text">
++             <string>Allow BSD compression</string>
++            </property>
++            <property name="checked">
++             <bool>true</bool>
++            </property>
++           </widget>
++          </item>
++          <item row="1" column="0">
++           <widget class="QCheckBox" name="cb_deflate">
++            <property name="text">
++             <string>Allow Deflate compression</string>
++            </property>
++            <property name="checked">
++             <bool>true</bool>
++            </property>
++           </widget>
++          </item>
++          <item row="2" column="0">
++           <widget class="QCheckBox" name="cb_TCPheaders">
++            <property name="text">
++             <string>Allow TCP header compression</string>
++            </property>
++            <property name="checked">
++             <bool>true</bool>
++            </property>
++           </widget>
++          </item>
++         </layout>
++        </widget>
++       </item>
++       <item row="3" column="0">
++        <widget class="QGroupBox" name="grp_echo">
++         <property name="title">
++          <string>Echo</string>
++         </property>
++         <layout class="QFormLayout" name="formLayout_4">
++          <property name="verticalSpacing">
++           <number>6</number>
++          </property>
++          <item row="0" column="0">
++           <widget class="QCheckBox" name="cb_sendEcho">
++            <property name="text">
++             <string>Send PPP echo packets </string>
++            </property>
++           </widget>
++          </item>
++         </layout>
++        </widget>
++       </item>
++       <item row="4" column="0">
++        <widget class="QGroupBox" name="grp_misc">
++         <property name="title">
++          <string>Misc</string>
++         </property>
++         <layout class="QGridLayout" name="gridLayout_3">
++          <item row="0" column="0">
++           <layout class="QHBoxLayout" name="horizontalLayout">
++            <item>
++             <widget class="QCheckBox" name="chk_useCustomUnitNumber">
++              <property name="text">
++               <string>Use custom unit number:</string>
++              </property>
++             </widget>
++            </item>
++            <item>
++             <widget class="QSpinBox" name="sb_customUnitNumber">
++              <property name="maximum">
++               <number>65535</number>
++              </property>
++             </widget>
++            </item>
++           </layout>
++          </item>
++         </layout>
++        </widget>
++       </item>
++       <item row="5" column="0">
++        <spacer name="verticalSpacer">
++         <property name="orientation">
++          <enum>Qt::Vertical</enum>
++         </property>
++         <property name="sizeHint" stdset="0">
++          <size>
++           <width>20</width>
++           <height>40</height>
++          </size>
++         </property>
++        </spacer>
++       </item>
++      </layout>
++     </widget>
++     <widget class="QWidget" name="proxyTab">
++      <attribute name="title">
++       <string>Proxy</string>
++      </attribute>
++      <layout class="QGridLayout" name="gridLayout_6">
++       <item row="0" column="0">
++        <widget class="QGroupBox" name="grp_general">
++         <property name="title">
++          <string>General</string>
++         </property>
++         <layout class="QGridLayout" name="gridLayout_5">
++          <item row="0" column="0">
++           <widget class="QLabel" name="lbl_address">
++            <property name="text">
++             <string>Address:</string>
++            </property>
++            <property name="alignment">
++             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
++            </property>
++           </widget>
++          </item>
++          <item row="0" column="1">
++           <widget class="QLineEdit" name="le_address"/>
++          </item>
++          <item row="1" column="0">
++           <widget class="QLabel" name="lbl_port">
++            <property name="text">
++             <string>Port:</string>
++            </property>
++            <property name="alignment">
++             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
++            </property>
++           </widget>
++          </item>
++          <item row="1" column="1">
++           <widget class="QSpinBox" name="sb_port">
++            <property name="maximum">
++             <number>65535</number>
++            </property>
++           </widget>
++          </item>
++         </layout>
++        </widget>
++       </item>
++       <item row="1" column="0">
++        <widget class="QGroupBox" name="grp_credentials">
++         <property name="title">
++          <string>Credentials</string>
++         </property>
++         <layout class="QFormLayout" name="formLayout_5">
++          <item row="0" column="0">
++           <widget class="QLabel" name="lbl_username">
++            <property name="text">
++             <string>Username:</string>
++            </property>
++            <property name="alignment">
++             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
++            </property>
++           </widget>
++          </item>
++          <item row="0" column="1">
++           <widget class="QLineEdit" name="le_username"/>
++          </item>
++          <item row="1" column="0">
++           <widget class="QLabel" name="lbl_password">
++            <property name="text">
++             <string>Password:</string>
++            </property>
++            <property name="alignment">
++             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
++            </property>
++           </widget>
++          </item>
++          <item row="1" column="1">
++           <widget class="PasswordField" name="le_password">
++            <property name="passwordModeEnabled" stdset="0">
++             <bool>true</bool>
++            </property>
++           </widget>
++          </item>
++         </layout>
++        </widget>
++       </item>
++       <item row="2" column="0">
++        <spacer name="verticalSpacer_2">
++         <property name="orientation">
++          <enum>Qt::Vertical</enum>
++         </property>
++         <property name="sizeHint" stdset="0">
++          <size>
++           <width>20</width>
++           <height>40</height>
++          </size>
++         </property>
++        </spacer>
++       </item>
++      </layout>
++     </widget>
++    </widget>
++   </item>
++  </layout>
++ </widget>
++ <customwidgets>
++  <customwidget>
++   <class>PasswordField</class>
++   <extends>QLineEdit</extends>
++   <header>passwordfield.h</header>
++  </customwidget>
++ </customwidgets>
++ <resources/>
++ <connections/>
++</ui>
+diff --git a/vpn/sstp-custom/sstpauth.cpp b/vpn/sstp-custom/sstpauth.cpp
+new file mode 100644
+index 000000000..c846bf46f
+--- /dev/null
++++ b/vpn/sstp-custom/sstpauth.cpp
+@@ -0,0 +1,50 @@
++/*
++    SPDX-FileCopyrightText: 2015 Jan Grulich <jgrulich@redhat.com>
++
++    SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
++*/
++
++#include "sstpauth.h"
++#include "ui_sstpauth.h"
++
++#include "nm-sstp-custom-service.h"
++
++class SstpAuthWidgetPrivate
++{
++public:
++    NetworkManager::VpnSetting::Ptr setting;
++    Ui_SstpAuth ui;
++};
++
++SstpAuthWidget::SstpAuthWidget(const NetworkManager::VpnSetting::Ptr &setting, const QStringList &hints, QWidget *parent)
++    : SettingWidget(setting, hints, parent)
++    , d_ptr(new SstpAuthWidgetPrivate)
++{
++    Q_D(SstpAuthWidget);
++    d->setting = setting;
++    d->ui.setupUi(this);
++
++    KAcceleratorManager::manage(this);
++}
++
++SstpAuthWidget::~SstpAuthWidget()
++{
++    delete d_ptr;
++}
++
++QVariantMap SstpAuthWidget::setting() const
++{
++    Q_D(const SstpAuthWidget);
++
++    NMStringMap secrets;
++    QVariantMap secretData;
++
++    if (!d->ui.le_password->text().isEmpty()) {
++        secrets.insert(QLatin1String(NM_SSTP_KEY_PASSWORD), d->ui.le_password->text());
++    }
++
++    secretData.insert("secrets", QVariant::fromValue<NMStringMap>(secrets));
++    return secretData;
++}
++
++#include "moc_sstpauth.cpp"
+diff --git a/vpn/sstp-custom/sstpauth.h b/vpn/sstp-custom/sstpauth.h
+new file mode 100644
+index 000000000..df284a304
+--- /dev/null
++++ b/vpn/sstp-custom/sstpauth.h
+@@ -0,0 +1,30 @@
++/*
++    SPDX-FileCopyrightText: 2015 Jan Grulich <jgrulich@redhat.com>
++
++    SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
++*/
++
++#ifndef SSTP_AUTH_H
++#define SSTP_AUTH_H
++
++#include "settingwidget.h"
++
++#include <NetworkManagerQt/VpnSetting>
++
++class SstpAuthWidgetPrivate;
++
++class SstpAuthWidget : public SettingWidget
++{
++    Q_OBJECT
++    Q_DECLARE_PRIVATE(SstpAuthWidget)
++public:
++    explicit SstpAuthWidget(const NetworkManager::VpnSetting::Ptr &setting, const QStringList &hints, QWidget *parent = nullptr);
++    ~SstpAuthWidget() override;
++
++    QVariantMap setting() const override;
++
++private:
++    SstpAuthWidgetPrivate *const d_ptr;
++};
++
++#endif // SSTP_AUTH_H
+diff --git a/vpn/sstp-custom/sstpauth.ui b/vpn/sstp-custom/sstpauth.ui
+new file mode 100644
+index 000000000..56c167108
+--- /dev/null
++++ b/vpn/sstp-custom/sstpauth.ui
+@@ -0,0 +1,67 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<ui version="4.0">
++ <class>SstpAuth</class>
++ <widget class="QWidget" name="SstpAuth">
++  <property name="geometry">
++   <rect>
++    <x>0</x>
++    <y>0</y>
++    <width>309</width>
++    <height>89</height>
++   </rect>
++  </property>
++  <property name="windowTitle">
++   <string>SSH VPN</string>
++  </property>
++  <layout class="QGridLayout" name="gridLayout">
++   <property name="leftMargin">
++    <number>0</number>
++   </property>
++   <property name="topMargin">
++    <number>0</number>
++   </property>
++   <property name="rightMargin">
++    <number>0</number>
++   </property>
++   <property name="bottomMargin">
++    <number>0</number>
++   </property>
++   <item row="0" column="0">
++    <widget class="QLabel" name="passwordLabel">
++     <property name="text">
++      <string>Password: </string>
++     </property>
++    </widget>
++   </item>
++   <item row="0" column="1">
++    <widget class="PasswordField" name="le_password">
++     <property name="passwordModeEnabled" stdset="0">
++      <bool>true</bool>
++     </property>
++    </widget>
++   </item>
++   <item row="1" column="1">
++    <spacer name="verticalSpacer">
++     <property name="orientation">
++      <enum>Qt::Vertical</enum>
++     </property>
++     <property name="sizeHint" stdset="0">
++      <size>
++       <width>20</width>
++       <height>0</height>
++      </size>
++     </property>
++    </spacer>
++   </item>
++  </layout>
++ </widget>
++ <customwidgets>
++  <customwidget>
++   <class>PasswordField</class>
++   <extends>QLineEdit</extends>
++   <header>passwordfield.h</header>
++  </customwidget>
++ </customwidgets>
++ <resources/>
++ <connections/>
++</ui>
+diff --git a/vpn/sstp-custom/sstpwidget.cpp b/vpn/sstp-custom/sstpwidget.cpp
+new file mode 100644
+index 000000000..35130cbe8
+--- /dev/null
++++ b/vpn/sstp-custom/sstpwidget.cpp
+@@ -0,0 +1,425 @@
++/*
++    SPDX-FileCopyrightText: 2015 Jan Grulich <jgrulich@redhat.com>
++
++    SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
++*/
++
++#include "sstpwidget.h"
++
++#include "ui_sstpadvanced.h"
++#include "ui_sstpwidget.h"
++
++#include <QDialog>
++#include <QDialogButtonBox>
++#include <QString>
++
++#include "nm-sstp-custom-service.h"
++
++namespace
++{
++bool isAsciiAlnum(QChar c)
++{
++    const ushort u = c.unicode();
++    return (u >= '0' && u <= '9') || (u >= 'A' && u <= 'Z') || (u >= 'a' && u <= 'z');
++}
++
++// Mirrors the validation performed by the custom NetworkManager SSTP backend
++// (nm-sstp-service.c) and the GTK editor (nm-sstp-editor.c): the optional host
++// must be a valid DNS name, or empty to mean "no host parameter".
++bool isValidSstpHost(const QString &host)
++{
++    if (host.isEmpty()) {
++        return true;
++    }
++    if (host.length() > 253 || host.endsWith(QLatin1Char('.'))) {
++        return false;
++    }
++    for (const QChar c : host) {
++        if (!isAsciiAlnum(c) && c != QLatin1Char('.') && c != QLatin1Char('-')) {
++            return false;
++        }
++    }
++    const QStringList labels = host.split(QLatin1Char('.'));
++    for (const QString &label : labels) {
++        if (label.isEmpty() || label.length() > 63 || label.startsWith(QLatin1Char('-')) || label.endsWith(QLatin1Char('-'))) {
++            return false;
++        }
++    }
++    return true;
++}
++} // namespace
++
++class SstpSettingWidgetPrivate
++{
++public:
++    Ui_SstpWidget ui;
++    Ui_SstpAdvanced advUi;
++    NetworkManager::VpnSetting::Ptr setting;
++    QDialog *advancedDlg = nullptr;
++    QWidget *advancedWid = nullptr;
++};
++
++SstpSettingWidget::SstpSettingWidget(const NetworkManager::VpnSetting::Ptr &setting, QWidget *parent)
++    : SettingWidget(setting, parent)
++    , d_ptr(new SstpSettingWidgetPrivate)
++{
++    Q_D(SstpSettingWidget);
++    d->ui.setupUi(this);
++
++    d->setting = setting;
++
++    d->ui.le_password->setPasswordOptionsEnabled(true);
++
++    connect(d->ui.btn_advancedOption, &QPushButton::clicked, this, &SstpSettingWidget::doAdvancedDialog);
++
++    d->advancedDlg = new QDialog(this);
++    d->advancedDlg->setModal(true);
++    d->advancedWid = new QWidget(this);
++    d->advUi.setupUi(d->advancedWid);
++    auto layout = new QVBoxLayout(d->advancedDlg);
++    layout->addWidget(d->advancedWid);
++    d->advancedDlg->setLayout(layout);
++    auto buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, d->advancedDlg);
++    connect(buttons, &QDialogButtonBox::accepted, d->advancedDlg, &QDialog::accept);
++    connect(buttons, &QDialogButtonBox::rejected, d->advancedDlg, &QDialog::reject);
++
++    layout->addWidget(buttons);
++
++    // Connect for setting check
++    watchChangedSetting();
++
++    // Connect for validity check
++    connect(d->ui.le_gateway, &QLineEdit::textChanged, this, &SstpSettingWidget::slotWidgetChanged);
++    connect(d->ui.le_host, &QLineEdit::textChanged, this, &SstpSettingWidget::slotWidgetChanged);
++    connect(d->ui.le_username, &QLineEdit::textChanged, this, &SstpSettingWidget::slotWidgetChanged);
++    connect(d->ui.le_password, &PasswordField::textChanged, this, &SstpSettingWidget::slotWidgetChanged);
++
++    KAcceleratorManager::manage(this);
++
++    if (d->setting && !d->setting->isNull()) {
++        loadConfig(d->setting);
++    }
++}
++
++SstpSettingWidget::~SstpSettingWidget()
++{
++    delete d_ptr;
++}
++
++void SstpSettingWidget::loadConfig(const NetworkManager::Setting::Ptr &setting)
++{
++    Q_D(SstpSettingWidget);
++    Q_UNUSED(setting)
++
++    const QString yesString = QLatin1String("yes");
++    const NMStringMap dataMap = d->setting->data();
++
++    // General
++    const QString gateway = dataMap[QLatin1String(NM_SSTP_KEY_GATEWAY)];
++    if (!gateway.isEmpty()) {
++        d->ui.le_gateway->setText(gateway);
++    }
++
++    // Optional host (absent means the parameter is not used)
++    const QString host = dataMap[QLatin1String(NM_SSTP_KEY_HOST)];
++    if (!host.isEmpty()) {
++        d->ui.le_host->setText(host);
++    }
++
++    // Optional setting
++    const QString username = dataMap[QLatin1String(NM_SSTP_KEY_USER)];
++    if (!username.isEmpty()) {
++        d->ui.le_username->setText(username);
++    }
++
++    // Authentication
++    const NetworkManager::Setting::SecretFlags type = (NetworkManager::Setting::SecretFlags)dataMap[NM_SSTP_KEY_PASSWORD_FLAGS].toInt();
++    fillOnePasswordCombo(d->ui.le_password, type);
++
++    const QString ntDomain = dataMap[QLatin1String(NM_SSTP_KEY_DOMAIN)];
++    if (!ntDomain.isEmpty()) {
++        d->ui.le_ntDomain->setText(ntDomain);
++    }
++
++    const QString caCert = dataMap[QLatin1String(NM_SSTP_KEY_CA_CERT)];
++    if (!caCert.isEmpty()) {
++        d->ui.kurl_caCert->setUrl(QUrl::fromLocalFile(caCert));
++    }
++
++    const bool ignoreCertWarnings = (dataMap[QLatin1String(NM_SSTP_KEY_IGN_CERT_WARN)] == yesString);
++    d->ui.chk_ignoreCertWarnings->setChecked(ignoreCertWarnings);
++
++    // Advanced options - Point-to-Point
++    bool refuse_pap = (dataMap[QLatin1String(NM_SSTP_KEY_REFUSE_PAP)] == yesString);
++    bool refuse_chap = (dataMap[QLatin1String(NM_SSTP_KEY_REFUSE_CHAP)] == yesString);
++    bool refuse_mschap = (dataMap[QLatin1String(NM_SSTP_KEY_REFUSE_MSCHAP)] == yesString);
++    bool refuse_mschapv2 = (dataMap[QLatin1String(NM_SSTP_KEY_REFUSE_MSCHAPV2)] == yesString);
++    bool refuse_eap = (dataMap[QLatin1String(NM_SSTP_KEY_REFUSE_EAP)] == yesString);
++
++    QListWidgetItem *item = nullptr;
++    item = d->advUi.listWidget->item(0); // PAP
++    item->setCheckState(refuse_pap ? Qt::Unchecked : Qt::Checked);
++    item = d->advUi.listWidget->item(1); // CHAP
++    item->setCheckState(refuse_chap ? Qt::Unchecked : Qt::Checked);
++    item = d->advUi.listWidget->item(2); // MSCHAP
++    item->setCheckState(refuse_mschap ? Qt::Unchecked : Qt::Checked);
++    item = d->advUi.listWidget->item(3); // MSCHAPv2
++    item->setCheckState(refuse_mschapv2 ? Qt::Unchecked : Qt::Checked);
++    item = d->advUi.listWidget->item(4); // EAP
++    item->setCheckState(refuse_eap ? Qt::Unchecked : Qt::Checked);
++
++    // Cryptography and compression
++    const bool mppe = (dataMap[QLatin1String(NM_SSTP_KEY_REQUIRE_MPPE)] == yesString);
++    const bool mppe40 = (dataMap[QLatin1String(NM_SSTP_KEY_REQUIRE_MPPE_40)] == yesString);
++    const bool mppe128 = (dataMap[QLatin1String(NM_SSTP_KEY_REQUIRE_MPPE_128)] == yesString);
++    const bool mppe_stateful = (dataMap[QLatin1String(NM_SSTP_KEY_MPPE_STATEFUL)] == yesString);
++
++    if (mppe || mppe40 || mppe128) { // If MPPE is use
++        d->advUi.gb_MPPE->setChecked(mppe || mppe40 || mppe128);
++        if (mppe128) {
++            d->advUi.cb_MPPECrypto->setCurrentIndex(1); // 128 bit
++        } else if (mppe40) {
++            d->advUi.cb_MPPECrypto->setCurrentIndex(2); // 40 bit
++        } else {
++            d->advUi.cb_MPPECrypto->setCurrentIndex(0); // Any
++        }
++        d->advUi.cb_statefulEncryption->setChecked(mppe_stateful);
++    }
++
++    const bool nobsd = (dataMap[QLatin1String(NM_SSTP_KEY_NOBSDCOMP)] == yesString);
++    d->advUi.cb_BSD->setChecked(!nobsd);
++
++    const bool nodeflate = (dataMap[QLatin1String(NM_SSTP_KEY_NODEFLATE)] == yesString);
++    d->advUi.cb_deflate->setChecked(!nodeflate);
++
++    const bool novjcomp = (dataMap[QLatin1String(NM_SSTP_KEY_NO_VJ_COMP)] == yesString);
++    d->advUi.cb_TCPheaders->setChecked(!novjcomp);
++
++    // Echo
++    const int lcp_echo_interval = QString(dataMap[QLatin1String(NM_SSTP_KEY_LCP_ECHO_INTERVAL)]).toInt();
++    d->advUi.cb_sendEcho->setChecked(lcp_echo_interval > 0);
++
++    if (dataMap.contains(QLatin1String(NM_SSTP_KEY_UNIT_NUM))) {
++        d->advUi.chk_useCustomUnitNumber->setChecked(true);
++        d->advUi.sb_customUnitNumber->setValue(dataMap[QLatin1String(NM_SSTP_KEY_UNIT_NUM)].toInt());
++    }
++
++    // Advanced options - Proxy
++    const QString address = dataMap[QLatin1String(NM_SSTP_KEY_PROXY_SERVER)];
++    if (!address.isEmpty()) {
++        d->advUi.le_address->setText(address);
++    }
++
++    const int port = dataMap[QLatin1String(NM_SSTP_KEY_PROXY_PORT)].toInt();
++    if (port >= 0) {
++        d->advUi.sb_port->setValue(port);
++    }
++
++    const QString proxyUsername = dataMap[QLatin1String(NM_SSTP_KEY_PROXY_USER)];
++    if (!proxyUsername.isEmpty()) {
++        d->advUi.le_username->setText(proxyUsername);
++    }
++
++    const QString proxyPassword = dataMap[QLatin1String(NM_SSTP_KEY_PROXY_PASSWORD)];
++    if (!proxyPassword.isEmpty()) {
++        d->advUi.le_password->setText(proxyPassword);
++    }
++
++    loadSecrets(setting);
++}
++
++void SstpSettingWidget::loadSecrets(const NetworkManager::Setting::Ptr &setting)
++{
++    Q_D(SstpSettingWidget);
++
++    NetworkManager::VpnSetting::Ptr vpnSetting = setting.staticCast<NetworkManager::VpnSetting>();
++
++    if (vpnSetting) {
++        const NMStringMap secrets = vpnSetting->secrets();
++
++        const QString keyPassword = secrets.value(NM_SSTP_KEY_PASSWORD);
++        if (!keyPassword.isEmpty()) {
++            d->ui.le_password->setText(keyPassword);
++        }
++    }
++}
++
++QVariantMap SstpSettingWidget::setting() const
++{
++    Q_D(const SstpSettingWidget);
++
++    NetworkManager::VpnSetting setting;
++    setting.setServiceType(QLatin1String(NM_DBUS_SERVICE_SSTP));
++
++    const QString yesString = QLatin1String("yes");
++
++    NMStringMap data;
++    NMStringMap secretData;
++
++    data.insert(QLatin1String(NM_SSTP_KEY_GATEWAY), d->ui.le_gateway->text());
++
++    if (!d->ui.le_host->text().isEmpty()) {
++        data.insert(QLatin1String(NM_SSTP_KEY_HOST), d->ui.le_host->text());
++    }
++
++    if (!d->ui.le_username->text().isEmpty()) {
++        data.insert(QLatin1String(NM_SSTP_KEY_USER), d->ui.le_username->text());
++    }
++
++    if (!d->ui.le_password->text().isEmpty()) {
++        secretData.insert(QLatin1String(NM_SSTP_KEY_PASSWORD), d->ui.le_password->text());
++    }
++    handleOnePasswordType(d->ui.le_password, NM_SSTP_KEY_PASSWORD_FLAGS, data);
++
++    if (!d->ui.le_ntDomain->text().isEmpty()) {
++        data.insert(QLatin1String(NM_SSTP_KEY_DOMAIN), d->ui.le_ntDomain->text());
++    }
++
++    if (!d->ui.kurl_caCert->url().isEmpty()) {
++        data.insert(QLatin1String(NM_SSTP_KEY_CA_CERT), d->ui.kurl_caCert->url().toLocalFile());
++    }
++
++    if (d->ui.chk_ignoreCertWarnings->isChecked()) {
++        data.insert(QLatin1String(NM_SSTP_KEY_IGN_CERT_WARN), yesString);
++    }
++
++    // Advanced configuration
++    QListWidgetItem *item = nullptr;
++    item = d->advUi.listWidget->item(0); // PAP
++    if (item->checkState() == Qt::Unchecked) {
++        data.insert(QLatin1String(NM_SSTP_KEY_REFUSE_PAP), yesString);
++    }
++    item = d->advUi.listWidget->item(1); // CHAP
++    if (item->checkState() == Qt::Unchecked) {
++        data.insert(QLatin1String(NM_SSTP_KEY_REFUSE_CHAP), yesString);
++    }
++    item = d->advUi.listWidget->item(2); // MSCHAP
++    if (item->checkState() == Qt::Unchecked) {
++        data.insert(QLatin1String(NM_SSTP_KEY_REFUSE_MSCHAP), yesString);
++    }
++    item = d->advUi.listWidget->item(3); // MSCHAPv2
++    if (item->checkState() == Qt::Unchecked) {
++        data.insert(QLatin1String(NM_SSTP_KEY_REFUSE_MSCHAPV2), yesString);
++    }
++    item = d->advUi.listWidget->item(4); // EAP
++    if (item->checkState() == Qt::Unchecked) {
++        data.insert(QLatin1String(NM_SSTP_KEY_REFUSE_EAP), yesString);
++    }
++
++    // Cryptography and compression
++    if (d->advUi.gb_MPPE->isChecked()) {
++        int index = d->advUi.cb_MPPECrypto->currentIndex();
++
++        switch (index) {
++        case 0:
++            data.insert(QLatin1String(NM_SSTP_KEY_REQUIRE_MPPE), yesString);
++            break;
++        case 1:
++            data.insert(QLatin1String(NM_SSTP_KEY_REQUIRE_MPPE_128), yesString);
++            break;
++        case 2:
++            data.insert(QLatin1String(NM_SSTP_KEY_REQUIRE_MPPE_40), yesString);
++            break;
++        }
++
++        if (d->advUi.cb_statefulEncryption->isChecked()) {
++            data.insert(NM_SSTP_KEY_MPPE_STATEFUL, yesString);
++        }
++    }
++
++    if (!d->advUi.cb_BSD->isChecked()) {
++        data.insert(QLatin1String(NM_SSTP_KEY_NOBSDCOMP), yesString);
++    }
++
++    if (!d->advUi.cb_deflate->isChecked()) {
++        data.insert(QLatin1String(NM_SSTP_KEY_NODEFLATE), yesString);
++    }
++
++    if (!d->advUi.cb_TCPheaders->isChecked()) {
++        data.insert(QLatin1String(NM_SSTP_KEY_NO_VJ_COMP), yesString);
++    }
++
++    // Echo
++    if (d->advUi.cb_sendEcho->isChecked()) {
++        data.insert(QLatin1String(NM_SSTP_KEY_LCP_ECHO_FAILURE), "5");
++        data.insert(QLatin1String(NM_SSTP_KEY_LCP_ECHO_INTERVAL), "30");
++    }
++
++    if (d->advUi.chk_useCustomUnitNumber->isChecked()) {
++        data.insert(QLatin1String(NM_SSTP_KEY_UNIT_NUM), QString::number(d->advUi.sb_customUnitNumber->value()));
++    }
++
++    if (!d->advUi.le_address->text().isEmpty()) {
++        data.insert(QLatin1String(NM_SSTP_KEY_PROXY_SERVER), d->advUi.le_address->text());
++    }
++
++    if (d->advUi.sb_port->value() >= 0) {
++        data.insert(QLatin1String(NM_SSTP_KEY_PROXY_PORT), QString::number(d->advUi.sb_port->value()));
++    }
++
++    if (!d->advUi.le_username->text().isEmpty()) {
++        data.insert(QLatin1String(NM_SSTP_KEY_PROXY_USER), d->advUi.le_username->text());
++    }
++
++    if (!d->advUi.le_password->text().isEmpty()) {
++        data.insert(QLatin1String(NM_SSTP_KEY_PROXY_PASSWORD), d->advUi.le_password->text());
++    }
++    handleOnePasswordType(d->advUi.le_password, NM_SSTP_KEY_PROXY_PASSWORD_FLAGS, data);
++
++    // save it all
++    setting.setData(data);
++    setting.setSecrets(secretData);
++
++    return setting.toMap();
++}
++
++void SstpSettingWidget::doAdvancedDialog()
++{
++    Q_D(SstpSettingWidget);
++    d->advancedDlg->show();
++}
++
++void SstpSettingWidget::fillOnePasswordCombo(PasswordField *passwordField, NetworkManager::Setting::SecretFlags type)
++{
++    if (type.testFlag(NetworkManager::Setting::None)) {
++        passwordField->setPasswordOption(PasswordField::StoreForAllUsers);
++    } else if (type.testFlag(NetworkManager::Setting::AgentOwned)) {
++        passwordField->setPasswordOption(PasswordField::StoreForUser);
++    } else if (type.testFlag(NetworkManager::Setting::NotSaved)) {
++        passwordField->setPasswordOption(PasswordField::AlwaysAsk);
++    } else {
++        passwordField->setPasswordOption(PasswordField::PasswordField::NotRequired);
++    }
++}
++
++void SstpSettingWidget::handleOnePasswordType(const PasswordField *passwordField, const QString &key, NMStringMap &data) const
++{
++    const PasswordField::PasswordOption option = passwordField->passwordOption();
++    switch (option) {
++    case PasswordField::StoreForAllUsers:
++        data.insert(key, QString::number(NetworkManager::Setting::None));
++        break;
++    case PasswordField::StoreForUser:
++        data.insert(key, QString::number(NetworkManager::Setting::AgentOwned));
++        break;
++    case PasswordField::AlwaysAsk:
++        data.insert(key, QString::number(NetworkManager::Setting::NotSaved));
++        break;
++    case PasswordField::NotRequired:
++        data.insert(key, QString::number(NetworkManager::Setting::NotRequired));
++        break;
++    }
++}
++
++bool SstpSettingWidget::isValid() const
++{
++    Q_D(const SstpSettingWidget);
++
++    if (d->ui.le_gateway->text().isEmpty()) {
++        return false;
++    }
++
++    return isValidSstpHost(d->ui.le_host->text());
++}
++
++#include "moc_sstpwidget.cpp"
+diff --git a/vpn/sstp-custom/sstpwidget.h b/vpn/sstp-custom/sstpwidget.h
+new file mode 100644
+index 000000000..3a4bb99b5
+--- /dev/null
++++ b/vpn/sstp-custom/sstpwidget.h
+@@ -0,0 +1,40 @@
++/*
++    SPDX-FileCopyrightText: 2015 Jan Grulich <jgrulich@redhat.com>
++
++    SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
++*/
++
++#ifndef SSTP_WIDGET_H
++#define SSTP_WIDGET_H
++
++#include "passwordfield.h"
++#include "settingwidget.h"
++
++#include <NetworkManagerQt/VpnSetting>
++
++class SstpSettingWidgetPrivate;
++
++class SstpSettingWidget : public SettingWidget
++{
++    Q_OBJECT
++    Q_DECLARE_PRIVATE(SstpSettingWidget)
++public:
++    explicit SstpSettingWidget(const NetworkManager::VpnSetting::Ptr &setting, QWidget *parent = nullptr);
++    ~SstpSettingWidget() override;
++
++    void loadConfig(const NetworkManager::Setting::Ptr &setting) override;
++    void loadSecrets(const NetworkManager::Setting::Ptr &setting) override;
++
++    QVariantMap setting() const override;
++    bool isValid() const override;
++
++private Q_SLOTS:
++    void doAdvancedDialog();
++
++private:
++    SstpSettingWidgetPrivate *const d_ptr;
++    void fillOnePasswordCombo(PasswordField *, NetworkManager::Setting::SecretFlags);
++    void handleOnePasswordType(const PasswordField *, const QString &, NMStringMap &) const;
++};
++
++#endif // SSTP_WIDGET_H
+diff --git a/vpn/sstp-custom/sstpwidget.ui b/vpn/sstp-custom/sstpwidget.ui
+new file mode 100644
+index 000000000..1adbf522d
+--- /dev/null
++++ b/vpn/sstp-custom/sstpwidget.ui
+@@ -0,0 +1,196 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<ui version="4.0">
++ <class>SstpWidget</class>
++ <widget class="QWidget" name="SstpWidget">
++  <property name="geometry">
++   <rect>
++    <x>0</x>
++    <y>0</y>
++    <width>469</width>
++    <height>441</height>
++   </rect>
++  </property>
++  <layout class="QGridLayout" name="gridLayout_8">
++   <item row="0" column="0">
++    <widget class="QGroupBox" name="groupBox">
++     <property name="title">
++      <string>General</string>
++     </property>
++     <layout class="QGridLayout" name="gridLayout">
++      <item row="0" column="0">
++       <layout class="QHBoxLayout" name="horizontalLayout_2">
++        <item>
++         <widget class="QLabel" name="lbl_gateway">
++          <property name="text">
++           <string>Gateway:</string>
++          </property>
++          <property name="alignment">
++           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
++          </property>
++         </widget>
++        </item>
++        <item>
++         <widget class="QLineEdit" name="le_gateway"/>
++        </item>
++       </layout>
++      </item>
++      <item row="1" column="0">
++       <layout class="QHBoxLayout" name="horizontalLayout_host">
++        <item>
++         <widget class="QLabel" name="lbl_host">
++          <property name="text">
++           <string>Host:</string>
++          </property>
++          <property name="alignment">
++           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
++          </property>
++         </widget>
++        </item>
++        <item>
++         <widget class="QLineEdit" name="le_host">
++          <property name="toolTip">
++           <string>Optional SSTP virtual host name passed separately from the gateway address (sstpc --host).</string>
++          </property>
++         </widget>
++        </item>
++       </layout>
++      </item>
++     </layout>
++    </widget>
++   </item>
++   <item row="3" column="0">
++    <layout class="QHBoxLayout" name="horizontalLayout">
++     <item>
++      <spacer name="horizontalSpacer">
++       <property name="orientation">
++        <enum>Qt::Horizontal</enum>
++       </property>
++       <property name="sizeHint" stdset="0">
++        <size>
++         <width>40</width>
++         <height>20</height>
++        </size>
++       </property>
++      </spacer>
++     </item>
++     <item>
++      <widget class="QPushButton" name="btn_advancedOption">
++       <property name="text">
++        <string>Advanced…</string>
++       </property>
++      </widget>
++     </item>
++    </layout>
++   </item>
++   <item row="2" column="0">
++    <spacer name="verticalSpacer">
++     <property name="orientation">
++      <enum>Qt::Vertical</enum>
++     </property>
++     <property name="sizeHint" stdset="0">
++      <size>
++       <width>20</width>
++       <height>40</height>
++      </size>
++     </property>
++    </spacer>
++   </item>
++   <item row="1" column="0">
++    <widget class="QGroupBox" name="groupBox_2">
++     <property name="title">
++      <string>Optional</string>
++     </property>
++     <layout class="QFormLayout" name="formLayout">
++      <item row="0" column="0">
++       <widget class="QLabel" name="lbl_username">
++        <property name="text">
++         <string>Username:</string>
++        </property>
++        <property name="alignment">
++         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
++        </property>
++       </widget>
++      </item>
++      <item row="0" column="1">
++       <widget class="QLineEdit" name="le_username"/>
++      </item>
++      <item row="1" column="0">
++       <widget class="QLabel" name="lbl_password">
++        <property name="text">
++         <string>Password:</string>
++        </property>
++        <property name="alignment">
++         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
++        </property>
++       </widget>
++      </item>
++      <item row="1" column="1">
++       <widget class="PasswordField" name="le_password">
++        <property name="passwordModeEnabled" stdset="0">
++         <bool>true</bool>
++        </property>
++       </widget>
++      </item>
++      <item row="2" column="0">
++       <widget class="QLabel" name="lbl_ntDomain">
++        <property name="text">
++         <string>NT Domain:</string>
++        </property>
++        <property name="alignment">
++         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
++        </property>
++       </widget>
++      </item>
++      <item row="2" column="1">
++       <widget class="QLineEdit" name="le_ntDomain"/>
++      </item>
++      <item row="3" column="0">
++       <widget class="QLabel" name="lbl_caCert">
++        <property name="text">
++         <string>CA Certificate:</string>
++        </property>
++        <property name="alignment">
++         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
++        </property>
++       </widget>
++      </item>
++      <item row="3" column="1">
++       <widget class="KUrlRequester" name="kurl_caCert"/>
++      </item>
++      <item row="4" column="0" colspan="2">
++       <widget class="QCheckBox" name="chk_ignoreCertWarnings">
++        <property name="text">
++         <string>Ignore certificate warnings</string>
++        </property>
++       </widget>
++      </item>
++     </layout>
++    </widget>
++   </item>
++  </layout>
++ </widget>
++ <customwidgets>
++  <customwidget>
++   <class>KUrlRequester</class>
++   <extends>QWidget</extends>
++   <header>kurlrequester.h</header>
++  </customwidget>
++  <customwidget>
++   <class>PasswordField</class>
++   <extends>QLineEdit</extends>
++   <header>passwordfield.h</header>
++  </customwidget>
++ </customwidgets>
++  <tabstops>
++   <tabstop>le_gateway</tabstop>
++   <tabstop>le_host</tabstop>
++   <tabstop>le_username</tabstop>
++  <tabstop>le_password</tabstop>
++  <tabstop>le_ntDomain</tabstop>
++  <tabstop>kurl_caCert</tabstop>
++  <tabstop>chk_ignoreCertWarnings</tabstop>
++  <tabstop>btn_advancedOption</tabstop>
++ </tabstops>
++ <resources/>
++ <connections/>
++</ui>
